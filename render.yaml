@@ -17,8 +17,10 @@ services:
         generateValue: true
       - key: FRONTEND_ORIGINS
         value: https://sordchat-web.onrender.com
+      - key: AUTO_MIGRATE_DB
+        value: "true"
       - key: AUTO_SEED_USERS
-        value: "false"
+        value: "true"
 
   - type: web
     name: sordchat-web

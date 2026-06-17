@@ -52,7 +52,7 @@ Configuracao sem custo no Render:
 - `autoDeployTrigger: off` evita deploy automatico a cada push; faca deploy manual quando quiser testar.
 - Nenhum banco Render Postgres, disco persistente, private service, worker, cron ou key-value e criado pelo blueprint.
 - O banco fica no Neon via `DATABASE_URL`.
-- `preDeployCommand` nao e usado porque o Render nao suporta pre-deploy em servicos free; rode `python scripts/deploy_db.py` manualmente antes do deploy e sempre que criar uma migration SQL.
+- `preDeployCommand` nao e usado porque o Render nao suporta pre-deploy em servicos free; a API roda migrations idempotentes no startup com `AUTO_MIGRATE_DB=true`.
 
 Variaveis para configurar no Render:
 

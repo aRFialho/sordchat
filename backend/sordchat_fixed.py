@@ -242,8 +242,66 @@ def create_default_users():
         db.commit()
 
 
+def split_sql_statements(sql: str) -> list[str]:
+    statements = []
+    current = []
+    in_single_quote = False
+    in_double_quote = False
+
+    for char in sql:
+        if char == "'" and not in_double_quote:
+            in_single_quote = not in_single_quote
+        elif char == '"' and not in_single_quote:
+            in_double_quote = not in_double_quote
+
+        if char == ";" and not in_single_quote and not in_double_quote:
+            statement = "".join(current).strip()
+            if statement:
+                statements.append(statement)
+            current = []
+            continue
+
+        current.append(char)
+
+    statement = "".join(current).strip()
+    if statement:
+        statements.append(statement)
+    return statements
+
+
+def run_startup_migrations():
+    if DATABASE_URL.startswith("sqlite"):
+        return
+    if os.getenv("AUTO_MIGRATE_DB", "true").lower() != "true":
+        return
+
+    migrations_dir = Path(__file__).resolve().parent / "db" / "migrations"
+    if not migrations_dir.exists():
+        return
+
+    with engine.begin() as conn:
+        conn.exec_driver_sql(
+            """
+            CREATE TABLE IF NOT EXISTS schema_migrations (
+              version TEXT PRIMARY KEY,
+              applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+
+        for migration in sorted(migrations_dir.glob("*.sql")):
+            sql = migration.read_text(encoding="utf-8")
+            for statement in split_sql_statements(sql):
+                conn.exec_driver_sql(statement)
+            conn.exec_driver_sql(
+                "INSERT INTO schema_migrations (version) VALUES (%s) ON CONFLICT (version) DO NOTHING",
+                (migration.stem,),
+            )
+
+
 @app.on_event("startup")
 async def startup_event():
+    run_startup_migrations()
     if DATABASE_URL.startswith("sqlite") or os.getenv("AUTO_SEED_USERS", "false").lower() == "true":
         create_default_users()
 
