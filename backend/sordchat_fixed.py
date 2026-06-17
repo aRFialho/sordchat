@@ -5,7 +5,7 @@ import json
 import os
 import uuid
 
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -364,6 +364,24 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
     }
 
 
+@app.get("/users/")
+async def list_users(current_user: User = Depends(get_current_user)):
+    with SessionLocal() as db:
+        users = db.query(User).order_by(User.full_name.asc()).all()
+        return [
+            {
+                "id": item.id,
+                "username": item.username,
+                "email": item.email,
+                "full_name": item.full_name,
+                "access_level": item.access_level,
+                "is_active": item.is_active,
+                "created_at": item.created_at.isoformat() if item.created_at else None,
+            }
+            for item in users
+        ]
+
+
 @app.websocket("/messages/ws/{token}")
 async def websocket_endpoint(websocket: WebSocket, token: str):
     user_data = None
@@ -466,17 +484,17 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
 
 @app.post("/files/upload")
 async def upload_file(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
-    allowed_types = {"image/jpeg", "image/png", "image/gif", "application/pdf", "text/plain"}
-    if file.content_type not in allowed_types:
-        raise HTTPException(status_code=400, detail="Tipo de arquivo nao permitido")
+    blocked_extensions = {".exe", ".bat", ".cmd", ".com", ".msi", ".ps1", ".sh", ".scr", ".vbs", ".js"}
+    file_extension = Path(file.filename or "").suffix.lower()
+    if file_extension in blocked_extensions:
+        raise HTTPException(status_code=400, detail="Este tipo de arquivo nao pode ser enviado por seguranca.")
 
     content = await file.read()
     if len(content) > 10 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Arquivo muito grande")
+        raise HTTPException(status_code=400, detail="Arquivo muito grande. Limite de 10 MB.")
 
     upload_dir = Path(os.getenv("UPLOAD_DIR", "uploads"))
     upload_dir.mkdir(parents=True, exist_ok=True)
-    file_extension = Path(file.filename or "").suffix
     unique_filename = f"{uuid.uuid4()}{file_extension}"
     file_path = upload_dir / unique_filename
     file_path.write_bytes(content)
@@ -499,6 +517,27 @@ async def upload_file(file: UploadFile = File(...), current_user: User = Depends
             "file_size": file_record.file_size,
             "content_type": file_record.content_type,
         }
+
+
+@app.get("/files/")
+async def list_files(
+    limit: int = Query(default=50, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+):
+    with SessionLocal() as db:
+        files = db.query(FileUpload).order_by(FileUpload.upload_date.desc()).limit(limit).all()
+        return [
+            {
+                "id": item.id,
+                "filename": item.filename,
+                "file_path": item.file_path,
+                "file_size": item.file_size,
+                "content_type": item.content_type,
+                "uploaded_by": item.uploaded_by,
+                "upload_date": item.upload_date.isoformat() if item.upload_date else None,
+            }
+            for item in files
+        ]
 
 
 @app.get("/files/download/{file_id}")

@@ -272,14 +272,14 @@ export const WebSocketProvider = ({ children }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Erro no upload');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Erro no upload');
       }
 
       const result = await response.json();
       return result;
     } catch (error) {
       console.error('Erro no upload:', error);
-      toast.error('Erro ao fazer upload do arquivo');
       throw error;
     }
   }, []);

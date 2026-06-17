@@ -14,7 +14,71 @@ import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { API_BASE_URL } from '../config';
 
-const quickEmojis = ['👍', '✅', '🔥', '🙌', '👀', '💡', '🙏', '🚀'];
+const emojiGroups = [
+  {
+    label: 'Reacoes',
+    emojis: [
+      '\u{1F600}',
+      '\u{1F601}',
+      '\u{1F602}',
+      '\u{1F642}',
+      '\u{1F60D}',
+      '\u{1F91D}',
+      '\u{1F44F}',
+      '\u{1F64C}',
+      '\u{1F44D}',
+      '\u{1F44E}',
+      '\u{2705}',
+      '\u{1F525}',
+      '\u{1F4A1}',
+      '\u{1F680}',
+      '\u{1F440}',
+      '\u{1F64F}',
+    ],
+  },
+  {
+    label: 'Trabalho',
+    emojis: [
+      '\u{1F4CC}',
+      '\u{1F4CE}',
+      '\u{1F5C2}\u{FE0F}',
+      '\u{1F4C1}',
+      '\u{1F4C4}',
+      '\u{1F4DD}',
+      '\u{1F4CA}',
+      '\u{1F4C8}',
+      '\u{1F50E}',
+      '\u{2699}\u{FE0F}',
+      '\u{1F6E0}\u{FE0F}',
+      '\u{23F1}\u{FE0F}',
+      '\u{1F4C5}',
+      '\u{1F3C1}',
+      '\u{1F3AF}',
+      '\u{1F4AC}',
+    ],
+  },
+  {
+    label: 'Status',
+    emojis: [
+      '\u{1F7E2}',
+      '\u{1F7E1}',
+      '\u{1F534}',
+      '\u{26A0}\u{FE0F}',
+      '\u{1F6A7}',
+      '\u{1F512}',
+      '\u{1F513}',
+      '\u{2B50}',
+      '\u{1F4AF}',
+      '\u{2728}',
+      '\u{1F4E3}',
+      '\u{1F4E5}',
+      '\u{1F4E4}',
+      '\u{1F9FE}',
+      '\u{1F197}',
+      '\u{274C}',
+    ],
+  },
+];
 
 const Chat = () => {
   const { user } = useAuth();
@@ -34,6 +98,7 @@ const Chat = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiCategory, setEmojiCategory] = useState(emojiGroups[0].label);
   const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -71,6 +136,7 @@ const Chat = () => {
   const typingUser = selectedUser
     ? typingUsers.find((item) => item.id === selectedUser.id)
     : typingUsers.find((item) => item.id !== user?.id);
+  const selectedEmojiGroup = emojiGroups.find((group) => group.label === emojiCategory) || emojiGroups[0];
 
   const handleTyping = (event) => {
     setNewMessage(event.target.value);
@@ -98,6 +164,12 @@ const Chat = () => {
     setShowEmojiPicker(false);
   };
 
+  const handleMessageKeyDown = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      handleSubmit(event);
+    }
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -111,7 +183,7 @@ const Chat = () => {
       sendMessage(file.name, selectedUser?.id, 'file', result.id || result.file_path);
       toast.success('Arquivo enviado.');
     } catch (error) {
-      toast.error('Nao foi possivel enviar o arquivo.');
+      toast.error(error.message || 'Nao foi possivel enviar o arquivo.');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -310,17 +382,31 @@ const Chat = () => {
 
         <footer className="border-t border-slate-200 bg-white p-4">
           {showEmojiPicker && (
-            <div className="mb-3 flex flex-wrap gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
-              {quickEmojis.map((emoji) => (
-                <button
-                  key={emoji}
-                  className="grid h-9 w-9 place-items-center rounded-lg bg-white text-lg hover:bg-slate-100"
-                  type="button"
-                  onClick={() => setNewMessage((prev) => `${prev}${emoji}`)}
-                >
-                  {emoji}
-                </button>
-              ))}
+            <div className="emoji-picker mb-3">
+              <div className="emoji-picker__tabs" role="tablist" aria-label="Categorias de emoji">
+                {emojiGroups.map((group) => (
+                  <button
+                    key={group.label}
+                    className={emojiCategory === group.label ? 'active' : ''}
+                    type="button"
+                    onClick={() => setEmojiCategory(group.label)}
+                  >
+                    {group.label}
+                  </button>
+                ))}
+              </div>
+              <div className="emoji-picker__grid">
+                {selectedEmojiGroup.emojis.map((emoji) => (
+                  <button
+                    key={emoji}
+                    className="emoji-button"
+                    type="button"
+                    onClick={() => setNewMessage((prev) => `${prev}${emoji}`)}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -329,7 +415,6 @@ const Chat = () => {
               className="icon-button icon-button--light"
               type="button"
               onClick={() => setShowEmojiPicker((value) => !value)}
-              disabled={!connected}
               title="Emojis"
               aria-label="Emojis"
             >
@@ -348,11 +433,13 @@ const Chat = () => {
               {isUploading ? <span className="spinner h-4 w-4" /> : <Paperclip size={18} />}
             </button>
 
-            <input
-              className="input min-w-0 flex-1"
+            <textarea
+              className="textarea min-h-[44px] min-w-0 flex-1 resize-none py-2"
               value={newMessage}
               onChange={handleTyping}
+              onKeyDown={handleMessageKeyDown}
               disabled={!connected}
+              rows={1}
               placeholder={selectedUser ? `Mensagem para ${selectedUser.full_name || selectedUser.username}` : 'Escreva uma mensagem'}
             />
 

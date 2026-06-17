@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   closestCenter,
   DndContext,
@@ -90,10 +90,26 @@ const initialColumns = [
   },
 ];
 
+const STORAGE_KEY = 'sordchat:tasks-board';
+
 const priorityMeta = {
   high: ['Alta', 'badge--danger'],
   medium: ['Media', 'badge--warning'],
   low: ['Baixa', 'badge--success'],
+};
+
+const loadStoredColumns = () => {
+  if (typeof window === 'undefined') {
+    return initialColumns;
+  }
+
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const parsed = stored ? JSON.parse(stored) : null;
+    return Array.isArray(parsed) && parsed.length ? parsed : initialColumns;
+  } catch (error) {
+    return initialColumns;
+  }
 };
 
 const findColumnByTask = (columns, taskId) =>
@@ -160,9 +176,13 @@ const SortableTask = ({ task, onDelete }) => {
 
 const Kanban = () => {
   const { user } = useAuth();
-  const [columns, setColumns] = useState(initialColumns);
+  const [columns, setColumns] = useState(loadStoredColumns);
   const [searchTerm, setSearchTerm] = useState('');
-  const [newTask, setNewTask] = useState('');
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [newTaskPriority, setNewTaskPriority] = useState('medium');
+  const [newTaskCategory, setNewTaskCategory] = useState('Operacao');
+  const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [targetColumn, setTargetColumn] = useState('backlog');
 
   const sensors = useSensors(
@@ -171,6 +191,10 @@ const Kanban = () => {
   );
 
   const totalTasks = columns.reduce((total, column) => total + column.tasks.length, 0);
+
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(columns));
+  }, [columns]);
 
   const visibleColumns = useMemo(() => {
     if (!searchTerm.trim()) {
@@ -241,18 +265,20 @@ const Kanban = () => {
   const handleAddTask = (event) => {
     event.preventDefault();
 
-    if (!newTask.trim()) {
+    if (!newTaskTitle.trim()) {
       toast.error('Informe o titulo da tarefa.');
       return;
     }
 
     const task = {
       id: `task-${Date.now()}`,
-      title: newTask.trim(),
-      description: `Criada por ${user?.full_name || user?.username || 'usuario'} no quadro operacional.`,
-      priority: 'medium',
-      category: 'Operacao',
-      dueDate: '',
+      title: newTaskTitle.trim(),
+      description:
+        newTaskDescription.trim() ||
+        `Criada por ${user?.full_name || user?.username || 'usuario'} no quadro operacional.`,
+      priority: newTaskPriority,
+      category: newTaskCategory.trim() || 'Operacao',
+      dueDate: newTaskDueDate,
     };
 
     setColumns((currentColumns) =>
@@ -260,7 +286,11 @@ const Kanban = () => {
         column.id === targetColumn ? { ...column, tasks: [task, ...column.tasks] } : column
       )
     );
-    setNewTask('');
+    setNewTaskTitle('');
+    setNewTaskDescription('');
+    setNewTaskPriority('medium');
+    setNewTaskCategory('Operacao');
+    setNewTaskDueDate('');
     toast.success('Tarefa adicionada.');
   };
 
@@ -276,7 +306,7 @@ const Kanban = () => {
   return (
     <div className="space-y-5">
       <section className="panel p-5">
-        <div className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
+        <div className="grid gap-5">
           <div>
             <span className="badge">Operacao</span>
             <h2 className="m-0 mt-3 text-2xl font-extrabold text-slate-950">Quadro de tarefas</h2>
@@ -285,12 +315,41 @@ const Kanban = () => {
             </p>
           </div>
 
-          <form className="grid gap-2 sm:grid-cols-[220px_180px_auto]" onSubmit={handleAddTask}>
+          <form className="task-form" onSubmit={handleAddTask}>
             <input
               className="input"
-              value={newTask}
-              onChange={(event) => setNewTask(event.target.value)}
-              placeholder="Nova tarefa"
+              value={newTaskTitle}
+              onChange={(event) => setNewTaskTitle(event.target.value)}
+              placeholder="Titulo da tarefa"
+            />
+            <input
+              className="input"
+              value={newTaskDescription}
+              onChange={(event) => setNewTaskDescription(event.target.value)}
+              placeholder="Descricao curta"
+            />
+            <select
+              className="select"
+              value={newTaskPriority}
+              onChange={(event) => setNewTaskPriority(event.target.value)}
+              aria-label="Prioridade"
+            >
+              <option value="high">Alta</option>
+              <option value="medium">Media</option>
+              <option value="low">Baixa</option>
+            </select>
+            <input
+              className="input"
+              value={newTaskCategory}
+              onChange={(event) => setNewTaskCategory(event.target.value)}
+              placeholder="Categoria"
+            />
+            <input
+              className="input"
+              type="date"
+              value={newTaskDueDate}
+              onChange={(event) => setNewTaskDueDate(event.target.value)}
+              aria-label="Prazo"
             />
             <select className="select" value={targetColumn} onChange={(event) => setTargetColumn(event.target.value)}>
               {columns.map((column) => (
@@ -321,9 +380,9 @@ const Kanban = () => {
       </section>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <section className="grid min-h-[520px] gap-4 overflow-x-auto pb-2 xl:grid-cols-4">
+        <section className="task-board">
           {visibleColumns.map((column) => (
-            <div className="panel flex min-h-[480px] min-w-[280px] flex-col overflow-hidden" key={column.id}>
+            <div className="panel flex min-h-[480px] flex-col overflow-hidden" key={column.id}>
               <header className="border-b border-slate-200 p-4" style={{ boxShadow: `inset 0 3px 0 ${column.color}` }}>
                 <div className="flex items-center justify-between">
                   <h3 className="m-0 text-sm font-extrabold text-slate-950">{column.title}</h3>

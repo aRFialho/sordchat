@@ -8,9 +8,12 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Chat from './pages/Chat';
 import Kanban from './pages/Kanban';
+import Tickets from './pages/Tickets';
+import Files from './pages/Files';
+import Users from './pages/Users';
+import Notifications from './pages/Notifications';
 import Loading from './components/common/Loading';
 import Toast from './components/common/Toast';
-import { Bell, FileText, Ticket, Users } from 'lucide-react';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -32,40 +35,18 @@ const PublicRoute = ({ children }) => {
   return !isAuthenticated ? children : <Navigate to="/dashboard" replace />;
 };
 
-const Placeholder = ({ title, description, icon: Icon }) => (
-  <section className="empty-state">
-    <div className="empty-state__icon">
-      <Icon size={28} strokeWidth={1.8} />
-    </div>
-    <h2>{title}</h2>
-    <p>{description}</p>
-  </section>
-);
-
 const ProtectedApp = () => (
   <WebSocketProvider>
     <Layout>
       <Routes>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/chat" element={<Chat />} />
-        <Route
-          path="/tickets"
-          element={<Placeholder title="Tickets" description="Fila de atendimento pronta para a proxima etapa." icon={Ticket} />}
-        />
+        <Route path="/tickets" element={<Tickets />} />
         <Route path="/tasks" element={<Kanban />} />
         <Route path="/kanban" element={<Kanban />} />
-        <Route
-          path="/files"
-          element={<Placeholder title="Arquivos" description="Central para anexos e documentos do time." icon={FileText} />}
-        />
-        <Route
-          path="/users"
-          element={<Placeholder title="Usuarios" description="Gestao de perfis e permissoes." icon={Users} />}
-        />
-        <Route
-          path="/notifications"
-          element={<Placeholder title="Notificacoes" description="Eventos importantes do workspace." icon={Bell} />}
-        />
+        <Route path="/files" element={<Files />} />
+        <Route path="/users" element={<Users />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Layout>
