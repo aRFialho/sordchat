@@ -5,12 +5,6 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import BrandLogo from '../components/common/BrandLogo';
 
-const demoCredentials = [
-  { username: 'admin', password: 'admin123', role: 'Administrador' },
-  { username: 'coordenador', password: 'coord123', role: 'Coordenador' },
-  { username: 'usuario', password: 'user123', role: 'Usuario' },
-];
-
 const Login = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -66,7 +60,7 @@ const Login = () => {
               <MessageSquare size={24} />
             </div>
             <h2 className="m-0 text-2xl font-extrabold">Entrar</h2>
-            <p className="m-0 mt-1 text-sm text-slate-500">Use uma conta demo para avaliar o projeto.</p>
+            <p className="m-0 mt-1 text-sm text-slate-500">Use suas credenciais para acessar o workspace.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -81,7 +75,7 @@ const Login = () => {
                   value={credentials.username}
                   onChange={(event) => setCredentials((prev) => ({ ...prev, username: event.target.value }))}
                   autoComplete="username"
-                  placeholder="admin"
+                  placeholder="seu.usuario"
                 />
               </div>
             </label>
@@ -97,7 +91,7 @@ const Login = () => {
                   value={credentials.password}
                   onChange={(event) => setCredentials((prev) => ({ ...prev, password: event.target.value }))}
                   autoComplete="current-password"
-                  placeholder="admin123"
+                  placeholder="sua senha"
                 />
               </div>
             </label>
@@ -107,26 +101,6 @@ const Login = () => {
               {loading ? 'Entrando...' : 'Entrar no SorDChat'}
             </button>
           </form>
-
-          <div className="mt-6 border-t border-slate-200 pt-5">
-            <p className="m-0 mb-3 text-xs font-extrabold uppercase tracking-wide text-slate-500">Credenciais demo</p>
-            <div className="grid gap-2">
-              {demoCredentials.map((demo) => (
-                <button
-                  key={demo.username}
-                  type="button"
-                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-3 text-left transition hover:bg-slate-50"
-                  onClick={() => setCredentials({ username: demo.username, password: demo.password })}
-                >
-                  <span>
-                    <span className="block text-sm font-bold text-slate-900">{demo.username}</span>
-                    <span className="block text-xs text-slate-500">{demo.role}</span>
-                  </span>
-                  <span className="text-xs font-bold text-teal-700">Usar</span>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
     </div>

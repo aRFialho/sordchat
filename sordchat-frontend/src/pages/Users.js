@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Mail, RefreshCw, Search, ShieldCheck, UserRoundCheck, Users as UsersIcon } from 'lucide-react';
+import { Cake, Mail, PhoneCall, RefreshCw, Search, ShieldCheck, UserRoundCheck, Users as UsersIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../config';
 
@@ -38,7 +38,12 @@ const Users = () => {
   const filteredUsers = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return users;
-    return users.filter((item) => [item.full_name, item.username, item.email, item.access_level].join(' ').toLowerCase().includes(term));
+    return users.filter((item) =>
+      [item.full_name, item.username, item.email, item.access_level, item.department, item.role_title, item.phone_extension]
+        .join(' ')
+        .toLowerCase()
+        .includes(term)
+    );
   }, [query, users]);
 
   return (
@@ -110,11 +115,27 @@ const Users = () => {
                       <ShieldCheck size={13} />
                       {accessLabel[item.access_level] || item.access_level}
                     </span>
+                    {item.department && <span className="badge">{item.department}</span>}
                   </div>
                   <p className="m-0 mt-3 flex items-center gap-2 text-sm text-slate-500">
                     <Mail size={15} />
                     <span className="truncate">{item.email}</span>
                   </p>
+                  {item.role_title && <p className="m-0 mt-2 text-sm text-slate-500">{item.role_title}</p>}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {item.phone_extension && (
+                      <span className="badge">
+                        <PhoneCall size={13} />
+                        Ramal {item.phone_extension}
+                      </span>
+                    )}
+                    {item.birthday && (
+                      <span className="badge">
+                        <Cake size={13} />
+                        {item.birthday}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </article>

@@ -12,6 +12,8 @@ import Tickets from './pages/Tickets';
 import Files from './pages/Files';
 import Users from './pages/Users';
 import Notifications from './pages/Notifications';
+import AdminPanel from './pages/AdminPanel';
+import CoordinatorPanel from './pages/CoordinatorPanel';
 import Loading from './components/common/Loading';
 import Toast from './components/common/Toast';
 
@@ -46,6 +48,8 @@ const ProtectedApp = () => (
         <Route path="/kanban" element={<Kanban />} />
         <Route path="/files" element={<Files />} />
         <Route path="/users" element={<Users />} />
+        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/coordinator" element={<CoordinatorPanel />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>

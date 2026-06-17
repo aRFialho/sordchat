@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, create_engine
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, create_engine, or_
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 import uvicorn
@@ -24,6 +24,9 @@ IS_PRODUCTION = os.getenv("ENVIRONMENT", "development").lower() == "production"
 DEFAULT_FRONTEND_ORIGINS = [
     "https://sordchat-web.onrender.com",
 ]
+DEFAULT_DEPARTMENTS = ["TI", "Suporte", "Comercial", "Financeiro", "Operacao", "Produto"]
+USER_LEVELS = {"usuario", "coordenador", "master", "padrao"}
+COORDINATOR_LEVELS = {"coordenador", "master"}
 
 
 def normalize_database_url(database_url: str) -> str:
@@ -55,12 +58,34 @@ class User(Base):
     full_name = Column(String(255), nullable=False)
     hashed_password = Column(String(255), nullable=False)
     access_level = Column(String(40), default="usuario", nullable=False)
+    department = Column(String(100), nullable=True)
+    phone_extension = Column(String(40), nullable=True)
+    birthday = Column(String(10), nullable=True)
+    role_title = Column(String(100), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, nullable=True)
 
     sent_messages = relationship("Message", foreign_keys="Message.sender_id", back_populates="sender")
     received_messages = relationship("Message", foreign_keys="Message.receiver_id", back_populates="receiver")
     uploaded_files = relationship("FileUpload", back_populates="uploader")
+
+
+class Ticket(Base):
+    __tablename__ = "tickets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False, index=True)
+    description = Column(Text, nullable=False)
+    priority = Column(String(40), default="Media", nullable=False)
+    status = Column(String(40), default="Aberto", nullable=False)
+    department = Column(String(100), nullable=True, index=True)
+    channel = Column(String(80), default="Web", nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, nullable=True)
+    closed_at = Column(DateTime, nullable=True)
 
 
 class Message(Base):
@@ -149,6 +174,87 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         return user
 
 
+def normalize_access_level(access_level: Optional[str]) -> str:
+    value = (access_level or "usuario").strip().lower()
+    if value == "padrao":
+        return "usuario"
+    return value if value in USER_LEVELS else "usuario"
+
+
+def is_admin(user: User) -> bool:
+    return normalize_access_level(user.access_level) == "master"
+
+
+def is_coordinator(user: User) -> bool:
+    return normalize_access_level(user.access_level) in COORDINATOR_LEVELS
+
+
+def ensure_admin(user: User):
+    if not is_admin(user):
+        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador.")
+
+
+def ensure_coordinator(user: User):
+    if not is_coordinator(user):
+        raise HTTPException(status_code=403, detail="Acesso restrito a coordenadores.")
+
+
+def serialize_user(user: User) -> dict:
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "access_level": normalize_access_level(user.access_level),
+        "department": user.department,
+        "phone_extension": user.phone_extension,
+        "birthday": user.birthday,
+        "role_title": user.role_title,
+        "is_active": user.is_active,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+    }
+
+
+def serialize_ticket(ticket: Ticket, db) -> dict:
+    created_by = db.query(User).filter(User.id == ticket.created_by_id).first()
+    assigned_to = db.query(User).filter(User.id == ticket.assigned_to_id).first() if ticket.assigned_to_id else None
+    return {
+        "id": ticket.id,
+        "title": ticket.title,
+        "description": ticket.description,
+        "priority": ticket.priority,
+        "status": ticket.status,
+        "department": ticket.department,
+        "channel": ticket.channel,
+        "created_by_id": ticket.created_by_id,
+        "created_by_name": created_by.full_name if created_by else None,
+        "assigned_to_id": ticket.assigned_to_id,
+        "assigned_to_name": assigned_to.full_name if assigned_to else None,
+        "created_at": ticket.created_at.isoformat() if ticket.created_at else None,
+        "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else None,
+        "closed_at": ticket.closed_at.isoformat() if ticket.closed_at else None,
+    }
+
+
+def serialize_message(message: Message, db) -> dict:
+    sender = db.query(User).filter(User.id == message.sender_id).first()
+    receiver = db.query(User).filter(User.id == message.receiver_id).first() if message.receiver_id else None
+    return {
+        "id": message.id,
+        "content": message.content,
+        "sender_id": message.sender_id,
+        "sender_name": sender.full_name if sender else "Usuario",
+        "sender_department": sender.department if sender else None,
+        "receiver_id": message.receiver_id,
+        "receiver_name": receiver.full_name if receiver else None,
+        "receiver_department": receiver.department if receiver else None,
+        "message_type": message.message_type,
+        "timestamp": message.timestamp.isoformat() if message.timestamp else None,
+        "file_path": message.file_path,
+    }
+
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[int, WebSocket] = {}
@@ -221,15 +327,57 @@ manager = ConnectionManager()
 
 def create_default_users():
     default_users = [
-        {"username": "admin", "email": "admin@sordchat.com", "full_name": "Administrador Master", "password": "admin123", "access_level": "master"},
-        {"username": "coordenador", "email": "coord@sordchat.com", "full_name": "Coordenador Sistema", "password": "coord123", "access_level": "coordenador"},
-        {"username": "usuario", "email": "user@sordchat.com", "full_name": "Usuario Padrao", "password": "user123", "access_level": "usuario"},
+        {
+            "username": "admin",
+            "email": "admin@sordchat.com",
+            "full_name": "Administrador Master",
+            "password": "admin123",
+            "access_level": "master",
+            "department": "Administracao",
+            "role_title": "Administrador do sistema",
+            "phone_extension": "1000",
+            "birthday": "01-01",
+        },
+        {
+            "username": "coordenador",
+            "email": "coord@sordchat.com",
+            "full_name": "Coordenador Sistema",
+            "password": "coord123",
+            "access_level": "coordenador",
+            "department": "TI",
+            "role_title": "Coordenador de TI",
+            "phone_extension": "2000",
+            "birthday": "02-02",
+        },
+        {
+            "username": "usuario",
+            "email": "user@sordchat.com",
+            "full_name": "Usuario Padrao",
+            "password": "user123",
+            "access_level": "usuario",
+            "department": "TI",
+            "role_title": "Analista",
+            "phone_extension": "2001",
+            "birthday": "03-03",
+        },
     ]
 
     with SessionLocal() as db:
-        if db.query(User).count() > 0:
-            return
         for user_data in default_users:
+            existing = db.query(User).filter(User.username == user_data["username"]).first()
+            if existing:
+                changed = False
+                for field in ["department", "role_title", "phone_extension", "birthday"]:
+                    if not getattr(existing, field, None):
+                        setattr(existing, field, user_data[field])
+                        changed = True
+                if existing.access_level == "padrao":
+                    existing.access_level = "usuario"
+                    changed = True
+                if changed:
+                    existing.updated_at = datetime.utcnow()
+                continue
+
             db.add(
                 User(
                     username=user_data["username"],
@@ -237,6 +385,10 @@ def create_default_users():
                     full_name=user_data["full_name"],
                     hashed_password=get_password_hash(user_data["password"]),
                     access_level=user_data["access_level"],
+                    department=user_data["department"],
+                    role_title=user_data["role_title"],
+                    phone_extension=user_data["phone_extension"],
+                    birthday=user_data["birthday"],
                 )
             )
         db.commit()
@@ -338,13 +490,7 @@ async def login(credentials: dict):
         return {
             "access_token": access_token,
             "token_type": "bearer",
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "full_name": user.full_name,
-                "access_level": user.access_level,
-            },
+            "user": serialize_user(user),
         }
 
 
@@ -355,31 +501,276 @@ async def logout(current_user: User = Depends(get_current_user)):
 
 @app.get("/auth/me")
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
-    return {
-        "id": current_user.id,
-        "username": current_user.username,
-        "email": current_user.email,
-        "full_name": current_user.full_name,
-        "access_level": current_user.access_level,
-    }
+    return serialize_user(current_user)
 
 
 @app.get("/users/")
 async def list_users(current_user: User = Depends(get_current_user)):
     with SessionLocal() as db:
+        query = db.query(User)
+        if not is_admin(current_user):
+            if is_coordinator(current_user) and current_user.department:
+                query = query.filter(User.department == current_user.department)
+            else:
+                query = query.filter(User.id == current_user.id)
+        users = query.order_by(User.full_name.asc()).all()
+        return [serialize_user(item) for item in users]
+
+
+@app.post("/users/")
+async def create_user(payload: dict, current_user: User = Depends(get_current_user)):
+    if not is_admin(current_user) and not is_coordinator(current_user):
+        raise HTTPException(status_code=403, detail="Sem permissao para criar usuarios.")
+
+    required_fields = ["username", "email", "full_name", "password"]
+    missing = [field for field in required_fields if not str(payload.get(field) or "").strip()]
+    if missing:
+        raise HTTPException(status_code=400, detail=f"Campos obrigatorios: {', '.join(missing)}")
+
+    access_level = normalize_access_level(payload.get("access_level"))
+    department = str(payload.get("department") or current_user.department or "Operacao").strip()
+
+    if is_coordinator(current_user) and not is_admin(current_user):
+        if department != current_user.department:
+            raise HTTPException(status_code=403, detail="Coordenador so pode criar usuarios do proprio setor.")
+        if access_level == "master":
+            raise HTTPException(status_code=403, detail="Coordenador nao pode criar administradores.")
+        access_level = "usuario"
+
+    with SessionLocal() as db:
+        duplicate = db.query(User).filter(or_(User.username == payload["username"], User.email == payload["email"])).first()
+        if duplicate:
+            raise HTTPException(status_code=400, detail="Username ou email ja esta em uso.")
+
+        user = User(
+            username=str(payload["username"]).strip(),
+            email=str(payload["email"]).strip(),
+            full_name=str(payload["full_name"]).strip(),
+            hashed_password=get_password_hash(str(payload["password"])),
+            access_level=access_level,
+            department=department,
+            phone_extension=str(payload.get("phone_extension") or "").strip() or None,
+            birthday=str(payload.get("birthday") or "").strip() or None,
+            role_title=str(payload.get("role_title") or "").strip() or None,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return serialize_user(user)
+
+
+@app.put("/users/{user_id}")
+async def update_user(user_id: int, payload: dict, current_user: User = Depends(get_current_user)):
+    with SessionLocal() as db:
+        target = db.query(User).filter(User.id == user_id).first()
+        if not target:
+            raise HTTPException(status_code=404, detail="Usuario nao encontrado.")
+
+        if not is_admin(current_user):
+            if not is_coordinator(current_user) or target.department != current_user.department:
+                raise HTTPException(status_code=403, detail="Sem permissao para editar este usuario.")
+            if target.access_level == "master":
+                raise HTTPException(status_code=403, detail="Coordenador nao pode editar administradores.")
+
+        editable_fields = ["full_name", "email", "department", "phone_extension", "birthday", "role_title"]
+        for field in editable_fields:
+            if field in payload:
+                value = str(payload.get(field) or "").strip() or None
+                setattr(target, field, value)
+
+        if "access_level" in payload and is_admin(current_user):
+            target.access_level = normalize_access_level(payload.get("access_level"))
+        elif "access_level" in payload and is_coordinator(current_user):
+            target.access_level = "usuario"
+
+        if "is_active" in payload and is_admin(current_user):
+            target.is_active = bool(payload.get("is_active"))
+
+        target.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(target)
+        return serialize_user(target)
+
+
+@app.get("/departments/")
+async def list_departments(current_user: User = Depends(get_current_user)):
+    with SessionLocal() as db:
+        departments = {department for department in DEFAULT_DEPARTMENTS}
+        if current_user.department:
+            departments.add(current_user.department)
+        rows = db.query(User.department).filter(User.department.isnot(None)).distinct().all()
+        for row in rows:
+            if row[0]:
+                departments.add(row[0])
+        if is_coordinator(current_user) and not is_admin(current_user):
+            return [current_user.department] if current_user.department else []
+        return sorted(departments)
+
+
+@app.get("/tickets/")
+async def list_tickets(
+    status: Optional[str] = Query(default=None),
+    department: Optional[str] = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=200),
+    current_user: User = Depends(get_current_user),
+):
+    with SessionLocal() as db:
+        query = db.query(Ticket)
+        if is_admin(current_user):
+            if department:
+                query = query.filter(Ticket.department == department)
+        elif is_coordinator(current_user) and current_user.department:
+            query = query.filter(Ticket.department == current_user.department)
+        else:
+            query = query.filter(or_(Ticket.created_by_id == current_user.id, Ticket.assigned_to_id == current_user.id))
+
+        if status:
+            query = query.filter(Ticket.status == status)
+
+        tickets = query.order_by(Ticket.created_at.desc()).limit(limit).all()
+        return [serialize_ticket(ticket, db) for ticket in tickets]
+
+
+@app.post("/tickets/")
+async def create_ticket(payload: dict, current_user: User = Depends(get_current_user)):
+    title = str(payload.get("title") or "").strip()
+    description = str(payload.get("description") or "").strip()
+    if not title or not description:
+        raise HTTPException(status_code=400, detail="Titulo e descricao sao obrigatorios.")
+
+    department = str(payload.get("department") or current_user.department or "Operacao").strip()
+    if is_coordinator(current_user) and not is_admin(current_user) and department != current_user.department:
+        raise HTTPException(status_code=403, detail="Coordenador so pode criar tickets do proprio setor.")
+
+    assigned_to_id = payload.get("assigned_to_id")
+    with SessionLocal() as db:
+        if assigned_to_id:
+            assigned_user = db.query(User).filter(User.id == int(assigned_to_id), User.is_active == True).first()
+            if not assigned_user:
+                raise HTTPException(status_code=400, detail="Usuario responsavel nao encontrado.")
+            if is_coordinator(current_user) and not is_admin(current_user) and assigned_user.department != current_user.department:
+                raise HTTPException(status_code=403, detail="Responsavel precisa estar no mesmo setor.")
+
+        ticket = Ticket(
+            title=title,
+            description=description,
+            priority=str(payload.get("priority") or "Media"),
+            status=str(payload.get("status") or "Aberto"),
+            department=department,
+            channel=str(payload.get("channel") or "Web"),
+            created_by_id=current_user.id,
+            assigned_to_id=int(assigned_to_id) if assigned_to_id else None,
+        )
+        db.add(ticket)
+        db.commit()
+        db.refresh(ticket)
+        return serialize_ticket(ticket, db)
+
+
+@app.patch("/tickets/{ticket_id}")
+async def update_ticket(ticket_id: int, payload: dict, current_user: User = Depends(get_current_user)):
+    with SessionLocal() as db:
+        ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket nao encontrado.")
+
+        can_edit = is_admin(current_user)
+        if not can_edit and is_coordinator(current_user) and current_user.department:
+            can_edit = ticket.department == current_user.department
+        if not can_edit:
+            can_edit = ticket.created_by_id == current_user.id or ticket.assigned_to_id == current_user.id
+        if not can_edit:
+            raise HTTPException(status_code=403, detail="Sem permissao para editar este ticket.")
+
+        for field in ["title", "description", "priority", "status", "department", "channel"]:
+            if field in payload:
+                setattr(ticket, field, str(payload.get(field) or "").strip() or None)
+
+        if "assigned_to_id" in payload:
+            assigned_to_id = payload.get("assigned_to_id")
+            if assigned_to_id:
+                assigned_user = db.query(User).filter(User.id == int(assigned_to_id), User.is_active == True).first()
+                if not assigned_user:
+                    raise HTTPException(status_code=400, detail="Usuario responsavel nao encontrado.")
+                if is_coordinator(current_user) and not is_admin(current_user) and assigned_user.department != current_user.department:
+                    raise HTTPException(status_code=403, detail="Responsavel precisa estar no mesmo setor.")
+                ticket.assigned_to_id = assigned_user.id
+            else:
+                ticket.assigned_to_id = None
+
+        if ticket.status == "Resolvido":
+            ticket.closed_at = ticket.closed_at or datetime.utcnow()
+        else:
+            ticket.closed_at = None
+        ticket.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(ticket)
+        return serialize_ticket(ticket, db)
+
+
+@app.get("/admin/overview")
+async def admin_overview(current_user: User = Depends(get_current_user)):
+    ensure_admin(current_user)
+    with SessionLocal() as db:
         users = db.query(User).order_by(User.full_name.asc()).all()
-        return [
-            {
-                "id": item.id,
-                "username": item.username,
-                "email": item.email,
-                "full_name": item.full_name,
-                "access_level": item.access_level,
-                "is_active": item.is_active,
-                "created_at": item.created_at.isoformat() if item.created_at else None,
-            }
-            for item in users
-        ]
+        tickets = db.query(Ticket).order_by(Ticket.created_at.desc()).limit(50).all()
+        messages = db.query(Message).order_by(Message.timestamp.desc()).limit(50).all()
+        departments = sorted(
+            {item.department for item in users if item.department} | {department for department in DEFAULT_DEPARTMENTS}
+        )
+
+        return {
+            "stats": {
+                "users": len(users),
+                "active_users": len([item for item in users if item.is_active]),
+                "tickets": db.query(Ticket).count(),
+                "open_tickets": db.query(Ticket).filter(Ticket.status != "Resolvido").count(),
+                "messages": db.query(Message).count(),
+                "departments": len(departments),
+            },
+            "departments": departments,
+            "users": [serialize_user(item) for item in users],
+            "tickets": [serialize_ticket(ticket, db) for ticket in tickets],
+            "messages": [serialize_message(message, db) for message in messages],
+        }
+
+
+@app.get("/coordinator/overview")
+async def coordinator_overview(current_user: User = Depends(get_current_user)):
+    ensure_coordinator(current_user)
+    department = current_user.department
+    with SessionLocal() as db:
+        users_query = db.query(User)
+        tickets_query = db.query(Ticket)
+        messages_query = db.query(Message)
+
+        if not is_admin(current_user):
+            users_query = users_query.filter(User.department == department)
+            tickets_query = tickets_query.filter(Ticket.department == department)
+            department_user_ids = [row[0] for row in db.query(User.id).filter(User.department == department).all()]
+            if department_user_ids:
+                messages_query = messages_query.filter(
+                    or_(Message.sender_id.in_(department_user_ids), Message.receiver_id.in_(department_user_ids))
+                )
+            else:
+                messages_query = messages_query.filter(Message.sender_id == current_user.id)
+
+        users = users_query.order_by(User.full_name.asc()).all()
+        tickets = tickets_query.order_by(Ticket.created_at.desc()).limit(50).all()
+        messages = messages_query.order_by(Message.timestamp.desc()).limit(30).all()
+
+        return {
+            "department": department,
+            "stats": {
+                "users": len(users),
+                "tickets": len(tickets),
+                "open_tickets": len([ticket for ticket in tickets if ticket.status != "Resolvido"]),
+                "messages": len(messages),
+            },
+            "users": [serialize_user(item) for item in users],
+            "tickets": [serialize_ticket(ticket, db) for ticket in tickets],
+            "messages": [serialize_message(message, db) for message in messages],
+        }
 
 
 @app.websocket("/messages/ws/{token}")

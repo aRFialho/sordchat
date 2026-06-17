@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell,
+  BriefcaseBusiness,
   ChevronLeft,
   ChevronRight,
   Files,
@@ -9,6 +10,7 @@ import {
   ListTodo,
   LogOut,
   MessageSquare,
+  ShieldCheck,
   Ticket,
   Users,
 } from 'lucide-react';
@@ -24,12 +26,14 @@ const pageMeta = {
   '/kanban': ['Tasks', 'Quadro de execucao do time'],
   '/files': ['Arquivos', 'Documentos e anexos compartilhados'],
   '/users': ['Usuarios', 'Equipe e permissoes'],
+  '/admin': ['Admin', 'Gestao global do workspace'],
+  '/coordinator': ['Coordenacao', 'Gestao do setor coordenado'],
   '/notifications': ['Notificacoes', 'Eventos recentes do workspace'],
 };
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { user, logout, isCoordinator } = useAuth();
+  const { user, logout, isAdmin, isCoordinator } = useAuth();
   const { connected, onlineUsers } = useWebSocket();
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,6 +45,8 @@ const Layout = ({ children }) => {
     { name: 'Tasks', icon: ListTodo, path: '/tasks', show: true },
     { name: 'Arquivos', icon: Files, path: '/files', show: true },
     { name: 'Usuarios', icon: Users, path: '/users', show: isCoordinator() },
+    { name: 'Admin', icon: ShieldCheck, path: '/admin', show: isAdmin() },
+    { name: 'Coordenacao', icon: BriefcaseBusiness, path: '/coordinator', show: isCoordinator() },
     { name: 'Alertas', icon: Bell, path: '/notifications', show: true },
   ];
 
