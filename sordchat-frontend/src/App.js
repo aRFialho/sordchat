@@ -3,94 +3,102 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WebSocketProvider } from './contexts/WebSocketContext';
 import Layout from './components/layout/Layout';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import Loading from './components/common/Loading';
-import Toast from './components/common/Toast';
 import Chat from './pages/Chat';
 import Kanban from './pages/Kanban';
-<Route path="/kanban" element={<Kanban />} />
-// Componente para proteger rotas
+import Loading from './components/common/Loading';
+import Toast from './components/common/Toast';
+import { Bell, FileText, Ticket, Users } from 'lucide-react';
+
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return <Loading fullScreen text="Verificando autenticação..." />;
+    return <Loading fullScreen text="Verificando sessao..." />;
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
-// Componente para redirecionar usuários autenticados
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return <Loading fullScreen text="Verificando autenticação..." />;
+    return <Loading fullScreen text="Verificando sessao..." />;
   }
 
-  return !isAuthenticated ? children : <Navigate to="/dashboard" />;
+  return !isAuthenticated ? children : <Navigate to="/dashboard" replace />;
 };
 
-// Páginas temporárias para desenvolvimento
-const ComingSoon = ({ title }) => (
-  <div className="flex items-center justify-center h-64">
-    <div className="text-center">
-      <div className="text-6xl mb-4">🚧</div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>
-      <p className="text-gray-600">Esta página está em desenvolvimento</p>
+const Placeholder = ({ title, description, icon: Icon }) => (
+  <section className="empty-state">
+    <div className="empty-state__icon">
+      <Icon size={28} strokeWidth={1.8} />
     </div>
-  </div>
+    <h2>{title}</h2>
+    <p>{description}</p>
+  </section>
 );
 
-// Componente principal das rotas protegidas
-const ProtectedApp = () => {
-  return (
-    <WebSocketProvider>
-      <Layout>
-        <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/tickets" element={<ComingSoon title="Tickets" />} />
-          <Route path="/tasks" element={<ComingSoon title="Tasks" />} />
-          <Route path="/files" element={<ComingSoon title="Arquivos" />} />
-          <Route path="/users" element={<ComingSoon title="Usuários" />} />
-          <Route path="/notifications" element={<ComingSoon title="Notificações" />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </Layout>
-    </WebSocketProvider>
-  );
-};
+const ProtectedApp = () => (
+  <WebSocketProvider>
+    <Layout>
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route
+          path="/tickets"
+          element={<Placeholder title="Tickets" description="Fila de atendimento pronta para a proxima etapa." icon={Ticket} />}
+        />
+        <Route path="/tasks" element={<Kanban />} />
+        <Route path="/kanban" element={<Kanban />} />
+        <Route
+          path="/files"
+          element={<Placeholder title="Arquivos" description="Central para anexos e documentos do time." icon={FileText} />}
+        />
+        <Route
+          path="/users"
+          element={<Placeholder title="Usuarios" description="Gestao de perfis e permissoes." icon={Users} />}
+        />
+        <Route
+          path="/notifications"
+          element={<Placeholder title="Notificacoes" description="Eventos importantes do workspace." icon={Bell} />}
+        />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </Layout>
+  </WebSocketProvider>
+);
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="App">
-          <Toast />
-          <Routes>
-            {/* Rota pública - Login */}
-            <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <Login />
-                </PublicRoute>
-              }
-            />
-
-            {/* Rotas protegidas */}
-            <Route
-              path="/*"
-              element={
-                <ProtectedRoute>
-                  <ProtectedApp />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </div>
+        <Toast />
+        <Routes>
+          <Route
+            path="/"
+            element={<Landing />}
+          />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <ProtectedApp />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
       </Router>
     </AuthProvider>
   );

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '../config';
 
 const AuthContext = createContext();
 
@@ -37,10 +38,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
 
-      console.log('🔄 Tentando fazer login...', credentials);
-
-      // Fazer requisição para o backend
-      const response = await fetch('http://127.0.0.1:8001/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,15 +46,12 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify(credentials),
       });
 
-      console.log('📡 Resposta da API:', response.status);
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ detail: 'Erro de conexão' }));
         throw new Error(errorData.detail || `Erro ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('✅ Login bem-sucedido:', data);
 
       const { access_token, user: userData } = data;
 
@@ -66,17 +61,17 @@ export const AuthProvider = ({ children }) => {
 
       setUser(userData);
 
-      toast.success(`Bem-vindo, ${userData.full_name}! 🎉`);
+      toast.success(`Bem-vindo, ${userData.full_name}!`);
 
       return { success: true, user: userData };
     } catch (error) {
-      console.error('❌ Erro no login:', error);
+      console.error('Erro no login:', error);
 
       // Verificar se é erro de conexão
       if (error.message.includes('fetch')) {
-        toast.error('❌ Erro de conexão! Verifique se o backend está rodando na porta 8001');
+        toast.error('Erro de conexao. Verifique se o backend esta rodando na porta 8001.');
       } else {
-        toast.error(`❌ ${error.message}`);
+        toast.error(error.message);
       }
 
       return { success: false, error: error.message };
@@ -90,14 +85,13 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (token) {
         // Tentar fazer logout no backend
-        await fetch('http://127.0.0.1:8001/auth/logout', {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
           },
         }).catch(() => {
-          // Ignorar erro de logout se backend não responder
-          console.log('Backend não respondeu ao logout, mas continuando...');
+          // Ignora falha remota; a sessao local ainda deve ser encerrada.
         });
       }
     } catch (error) {

@@ -1,7 +1,30 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  Bell,
+  ChevronLeft,
+  ChevronRight,
+  Files,
+  LayoutDashboard,
+  ListTodo,
+  LogOut,
+  MessageSquare,
+  Ticket,
+  Users,
+} from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useWebSocket } from '../../contexts/WebSocketContext';
+
+const pageMeta = {
+  '/dashboard': ['Dashboard', 'Visao geral operacional do SorDChat'],
+  '/chat': ['Chat', 'Conversas em tempo real'],
+  '/tickets': ['Tickets', 'Fila de suporte e atendimento'],
+  '/tasks': ['Tasks', 'Quadro de execucao do time'],
+  '/kanban': ['Tasks', 'Quadro de execucao do time'],
+  '/files': ['Arquivos', 'Documentos e anexos compartilhados'],
+  '/users': ['Usuarios', 'Equipe e permissoes'],
+  '/notifications': ['Notificacoes', 'Eventos recentes do workspace'],
+};
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -10,236 +33,120 @@ const Layout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const menuItems = [
+    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', show: true },
+    { name: 'Chat', icon: MessageSquare, path: '/chat', show: true },
+    { name: 'Tickets', icon: Ticket, path: '/tickets', show: true },
+    { name: 'Tasks', icon: ListTodo, path: '/tasks', show: true },
+    { name: 'Arquivos', icon: Files, path: '/files', show: true },
+    { name: 'Usuarios', icon: Users, path: '/users', show: isCoordinator() },
+    { name: 'Alertas', icon: Bell, path: '/notifications', show: true },
+  ];
+
+  const [title, description] = pageMeta[location.pathname] || ['SorDChat', 'Sistema corporativo de comunicacao'];
+
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
-  // Menu items baseado nas permissões
-  const menuItems = [
-    {
-      name: 'Dashboard',
-      icon: '📊',
-      path: '/dashboard',
-      show: true
-    },
-    {
-      name: 'Chat',
-      icon: '💬',
-      path: '/chat',
-      show: true,
-      badge: connected ? '🟢' : '🔴'
-    },
-    {
-      name: 'Tickets',
-      icon: '🎫',
-      path: '/tickets',
-      show: true
-    },
-    {
-      name: 'Tasks',
-      icon: '📋',
-      path: '/tasks',
-      show: true
-    },
-    {
-      name: 'Arquivos',
-      icon: '📁',
-      path: '/files',
-      show: true
-    },
-    {
-      name: 'Usuários',
-      icon: '👥',
-      path: '/users',
-      show: isCoordinator()
-    },
-    {
-      name: 'Notificações',
-      icon: '🔔',
-      path: '/notifications',
-      show: true
-    }
-  ];
-
-  const visibleMenuItems = menuItems.filter(item => item.show);
-
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-white shadow-lg transition-all duration-300 flex flex-col`}>
-        {/* Header da sidebar */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            {sidebarOpen && (
-              <div className="flex items-center space-x-2">
-                <span className="text-2xl">💬</span>
-                <h1 className="text-xl font-bold text-gray-800">SorDChat</h1>
-              </div>
-            )}
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              {sidebarOpen ? '◀' : '▶'}
-            </button>
-          </div>
-        </div>
-
-        {/* Status de conexão */}
-        {sidebarOpen && (
-          <div className="px-4 py-2 border-b border-gray-200">
-            <div className="flex items-center space-x-2 text-sm">
-              <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="text-gray-600">
-                {connected ? 'Online' : 'Desconectado'}
-              </span>
-              {connected && (
-                <span className="text-gray-500">
-                  ({onlineUsers.length} usuários online)
-                </span>
+    <div className="app-shell">
+      <aside className={`sidebar ${sidebarOpen ? '' : 'sidebar--collapsed'}`}>
+        <div className="sidebar__brand">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="brand-mark">S</div>
+              {sidebarOpen && (
+                <div className="min-w-0">
+                  <p className="m-0 truncate text-base font-extrabold text-white">SorDChat</p>
+                  <p className="m-0 truncate text-xs text-slate-400">Workspace interno</p>
+                </div>
               )}
             </div>
+            <button
+              className="icon-button"
+              onClick={() => setSidebarOpen((value) => !value)}
+              aria-label={sidebarOpen ? 'Recolher menu' : 'Expandir menu'}
+              title={sidebarOpen ? 'Recolher menu' : 'Expandir menu'}
+            >
+              {sidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+            </button>
           </div>
-        )}
+        </div>
 
-        {/* Menu de navegação */}
-        <nav className="flex-1 p-4">
-          <ul className="space-y-2">
-            {visibleMenuItems.map((item) => {
-              const isActive = location.pathname === item.path;
+        <nav className="nav-list" aria-label="Navegacao principal">
+          {menuItems
+            .filter((item) => item.show)
+            .map((item) => {
+              const Icon = item.icon;
+              const active = location.pathname === item.path || (item.path === '/tasks' && location.pathname === '/kanban');
+
               return (
-                <li key={item.path}>
-                  <button
-                    onClick={() => navigate(item.path)}
-                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    <span className="text-lg">{item.icon}</span>
-                    {sidebarOpen && (
-                      <>
-                        <span className="font-medium">{item.name}</span>
-                        {item.badge && (
-                          <span className="ml-auto text-xs">{item.badge}</span>
-                        )}
-                      </>
-                    )}
-                  </button>
-                </li>
+                <button
+                  key={item.path}
+                  className={`nav-item ${active ? 'nav-item--active' : ''}`}
+                  onClick={() => navigate(item.path)}
+                  title={item.name}
+                >
+                  <Icon size={19} strokeWidth={1.9} />
+                  {sidebarOpen && <span className="truncate font-semibold">{item.name}</span>}
+                  {sidebarOpen && item.path === '/chat' && (
+                    <span className={`status-dot ml-auto ${connected ? 'status-dot--online' : ''}`} />
+                  )}
+                </button>
               );
             })}
-          </ul>
         </nav>
 
-        {/* Perfil do usuário */}
-        <div className="p-4 border-t border-gray-200">
-          {sidebarOpen ? (
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold">
-                    {user?.full_name?.charAt(0) || 'U'}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {user?.full_name}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {user?.access_level === 'master' ? 'Administrador' :
-                     user?.access_level === 'coordenador' ? 'Coordenador' : 'Usuário'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <span>🚪</span>
-                <span>Sair</span>
-              </button>
+        <div className="sidebar__profile mt-auto">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-lg bg-slate-700 text-sm font-bold text-white">
+              {(user?.full_name || user?.username || 'U').charAt(0).toUpperCase()}
             </div>
-          ) : (
-            <button
-              onClick={handleLogout}
-              className="w-full p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              title="Sair"
-            >
-              🚪
-            </button>
-          )}
+            {sidebarOpen && (
+              <div className="min-w-0">
+                <p className="m-0 truncate text-sm font-bold text-white">{user?.full_name || user?.username}</p>
+                <p className="m-0 truncate text-xs text-slate-400">
+                  {connected ? `${onlineUsers.length + 1} online` : 'Desconectado'}
+                </p>
+              </div>
+            )}
+          </div>
+          <button className="nav-item text-red-200 hover:text-white" onClick={handleLogout} title="Sair">
+            <LogOut size={18} />
+            {sidebarOpen && <span className="font-semibold">Sair</span>}
+          </button>
         </div>
-      </div>
+      </aside>
 
-      {/* Conteúdo principal */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-800">
-                {getPageTitle(location.pathname)}
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {getPageDescription(location.pathname)}
-              </p>
-            </div>
+      <div className="main-shell">
+        <header className="topbar">
+          <div className="min-w-0">
+            <h1 className="m-0 text-2xl font-extrabold text-slate-950">{title}</h1>
+            <p className="m-0 mt-1 text-sm text-slate-500">{description}</p>
+          </div>
 
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate('/notifications')}
-                className="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <span className="text-xl">🔔</span>
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-              </button>
-
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>{user?.username}</span>
-              </div>
-            </div>
+          <div className="flex items-center gap-3">
+            <span className={`badge ${connected ? 'badge--success' : 'badge--danger'}`}>
+              <span className={`status-dot ${connected ? 'status-dot--online' : ''}`} />
+              {connected ? 'Online' : 'Offline'}
+            </span>
+            <button
+              className="icon-button icon-button--light"
+              onClick={() => navigate('/notifications')}
+              aria-label="Notificacoes"
+              title="Notificacoes"
+            >
+              <Bell size={18} />
+            </button>
           </div>
         </header>
 
-        {/* Conteúdo da página */}
-        <main className="flex-1 overflow-auto p-6">
-          {children}
-        </main>
+        <main className="page-content">{children}</main>
       </div>
     </div>
   );
-};
-
-// Função para obter título da página
-const getPageTitle = (pathname) => {
-  const titles = {
-    '/dashboard': 'Dashboard',
-    '/chat': 'Chat',
-    '/tickets': 'Tickets',
-    '/tasks': 'Tasks',
-    '/files': 'Arquivos',
-    '/users': 'Usuários',
-    '/notifications': 'Notificações'
-  };
-  return titles[pathname] || 'SorDChat';
-};
-
-// Função para obter descrição da página
-const getPageDescription = (pathname) => {
-  const descriptions = {
-    '/dashboard': 'Visão geral do sistema e estatísticas',
-    '/chat': 'Comunicação em tempo real',
-    '/tickets': 'Gerenciamento de tickets de suporte',
-    '/tasks': 'Controle de tarefas e projetos',
-    '/files': 'Upload e gerenciamento de arquivos',
-    '/users': 'Gerenciamento de usuários do sistema',
-    '/notifications': 'Central de notificações'
-  };
-  return descriptions[pathname] || 'Sistema corporativo de comunicação';
 };
 
 export default Layout;

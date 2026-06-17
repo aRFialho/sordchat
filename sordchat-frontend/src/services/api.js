@@ -1,5 +1,4 @@
-// Configuração base da API
-const API_BASE_URL = 'http://127.0.0.1:8001';
+import { API_BASE_URL } from '../config';
 
 // Função auxiliar para fazer requisições
 const apiRequest = async (endpoint, options = {}) => {

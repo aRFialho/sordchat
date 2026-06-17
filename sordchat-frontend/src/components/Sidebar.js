@@ -1,7 +1,1 @@
-// Adicionar no array de menuItems:
-{
-  name: 'Kanban',
-  icon: '📋',
-  path: '/kanban',
-  roles: ['usuario', 'coordenador', 'master']
-},
+export { default } from './layout/Layout';

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
+import { API_BASE_URL, WS_BASE_URL } from '../config';
 
 const WebSocketContext = createContext();
 
@@ -31,16 +32,13 @@ export const WebSocketProvider = ({ children }) => {
   const handleWebSocketMessage = useCallback((data) => {
     switch (data.type) {
       case 'connection':
-        console.log('✅ Conectado:', data.message);
         break;
 
       case 'message_history':
-        console.log('📜 Histórico carregado:', data.messages.length, 'mensagens');
         setMessages(data.messages);
         break;
 
       case 'new_message':
-        console.log('�� Nova mensagem:', data.message);
         setMessages(prev => [...prev, data.message]);
 
         // Incrementar contador de não lidas se não for do usuário atual
@@ -53,7 +51,6 @@ export const WebSocketProvider = ({ children }) => {
         break;
 
       case 'user_status':
-        console.log('👤 Status do usuário:', data);
         if (data.is_online) {
           setOnlineUsers(prev => {
             const exists = prev.find(u => u.id === data.user_id);
@@ -72,7 +69,6 @@ export const WebSocketProvider = ({ children }) => {
         break;
 
       case 'online_users':
-        console.log('👥 Usuários online:', data.users);
         setOnlineUsers(data.users.filter(u => u.id !== user?.id));
         break;
 
@@ -106,11 +102,10 @@ export const WebSocketProvider = ({ children }) => {
         break;
 
       case 'pong':
-        console.log('🏓 Pong recebido');
         break;
 
       default:
-        console.log('�� Mensagem não reconhecida:', data);
+        console.debug('Mensagem WebSocket nao reconhecida:', data);
     }
   }, [user]);
 
@@ -122,22 +117,17 @@ export const WebSocketProvider = ({ children }) => {
 
     const token = localStorage.getItem('token');
     if (!token) {
-      console.log('❌ Token não encontrado');
       return;
     }
 
     try {
-      console.log('🔄 Conectando ao WebSocket...');
-      console.log('🔑 Token:', token.substring(0, 20) + '...');
-
-      const wsUrl = `ws://127.0.0.1:8001/messages/ws/${token}`;
+      const wsUrl = `${WS_BASE_URL}/messages/ws/${token}`;
       const newSocket = new WebSocket(wsUrl);
 
       newSocket.onopen = () => {
-        console.log('✅ WebSocket conectado');
         setConnected(true);
         connectedRef.current = true;
-        toast.success('Conectado ao chat em tempo real! 🔄');
+        toast.success('Conectado ao chat em tempo real.');
 
         // Configurar ping periódico
         pingIntervalRef.current = setInterval(() => {
@@ -157,7 +147,6 @@ export const WebSocketProvider = ({ children }) => {
       };
 
       newSocket.onclose = (event) => {
-        console.log('🔌 WebSocket desconectado:', event.code, event.reason);
         setConnected(false);
         connectedRef.current = false;
 
@@ -175,7 +164,7 @@ export const WebSocketProvider = ({ children }) => {
           if (event.code === 1008) {
             toast.error('Token inválido. Faça login novamente.');
           } else {
-            toast.error('Conexão perdida. Tentando reconectar...');
+            toast.error('Conexao perdida. Tentando reconectar...');
 
             // Tentar reconectar após 3 segundos
             reconnectTimeoutRef.current = setTimeout(() => {
@@ -188,8 +177,8 @@ export const WebSocketProvider = ({ children }) => {
       };
 
       newSocket.onerror = (error) => {
-        console.error('❌ Erro no WebSocket:', error);
-        toast.error('Erro na conexão em tempo real');
+        console.error('Erro no WebSocket:', error);
+        toast.error('Erro na conexao em tempo real');
       };
 
       socketRef.current = newSocket;
@@ -242,7 +231,6 @@ export const WebSocketProvider = ({ children }) => {
 
     try {
       socketRef.current.send(JSON.stringify(messageData));
-      console.log('📤 Mensagem enviada:', messageData);
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
       toast.error('Erro ao enviar mensagem');
@@ -275,7 +263,7 @@ export const WebSocketProvider = ({ children }) => {
       formData.append('file', file);
 
       const token = localStorage.getItem('token');
-      const response = await fetch('http://127.0.0.1:8001/files/upload', {
+      const response = await fetch(`${API_BASE_URL}/files/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -300,7 +288,7 @@ export const WebSocketProvider = ({ children }) => {
   const sendReaction = useCallback(async (messageId, emoji) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://127.0.0.1:8001/messages/${messageId}/reactions`, {
+      const response = await fetch(`${API_BASE_URL}/messages/${messageId}/reactions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
