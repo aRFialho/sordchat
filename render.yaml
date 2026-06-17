@@ -2,7 +2,9 @@ services:
   - type: web
     name: sordchat-api
     runtime: python
+    plan: free
     rootDir: backend
+    autoDeployTrigger: off
     buildCommand: pip install -r requirements.txt
     preDeployCommand: python scripts/deploy_db.py && python scripts/seed_default_users.py
     startCommand: uvicorn sordchat_fixed:app --host 0.0.0.0 --port $PORT
@@ -23,6 +25,7 @@ services:
     name: sordchat-web
     runtime: static
     rootDir: sordchat-frontend
+    autoDeployTrigger: off
     buildCommand: npm install && npm run build
     staticPublishPath: build
     routes:

@@ -44,6 +44,14 @@ As migrations SQL ficam em `backend/db/migrations` e sao aplicadas diretamente n
 
 O blueprint esta em `render.yaml`.
 
+Configuracao sem custo no Render:
+
+- `sordchat-api` usa `plan: free`.
+- `sordchat-web` usa `runtime: static`, que e o tipo de site estatico gratuito.
+- `autoDeployTrigger: off` evita deploy automatico a cada push; faca deploy manual quando quiser testar.
+- Nenhum banco Render Postgres, disco persistente, private service, worker, cron ou key-value e criado pelo blueprint.
+- O banco fica no Neon via `DATABASE_URL`.
+
 Variaveis para configurar no Render:
 
 - `DATABASE_URL`: connection string do Neon com SSL.
