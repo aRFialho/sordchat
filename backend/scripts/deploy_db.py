@@ -4,6 +4,7 @@ import sys
 
 import psycopg
 
+from env_loader import load_database_url_from_env_file
 
 ROOT = Path(__file__).resolve().parents[1]
 MIGRATIONS_DIR = ROOT / "db" / "migrations"
@@ -33,6 +34,7 @@ def applied_versions(conn) -> set[str]:
 
 
 def main():
+    load_database_url_from_env_file()
     migrations = sorted(MIGRATIONS_DIR.glob("*.sql"))
     if not migrations:
         print("Nenhuma migration encontrada.")

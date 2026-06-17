@@ -28,6 +28,23 @@ CREATE TABLE IF NOT EXISTS messages (
   is_read BOOLEAN NOT NULL DEFAULT FALSE
 );
 
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS file_path VARCHAR(500);
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS timestamp TIMESTAMPTZ;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE;
+
+UPDATE messages
+SET timestamp = COALESCE(timestamp, created_at, NOW())
+WHERE timestamp IS NULL;
+
+UPDATE messages
+SET is_read = FALSE
+WHERE is_read IS NULL;
+
+ALTER TABLE messages ALTER COLUMN timestamp SET DEFAULT NOW();
+ALTER TABLE messages ALTER COLUMN timestamp SET NOT NULL;
+ALTER TABLE messages ALTER COLUMN is_read SET DEFAULT FALSE;
+ALTER TABLE messages ALTER COLUMN is_read SET NOT NULL;
+
 CREATE INDEX IF NOT EXISTS ix_messages_sender_id ON messages (sender_id);
 CREATE INDEX IF NOT EXISTS ix_messages_receiver_id ON messages (receiver_id);
 CREATE INDEX IF NOT EXISTS ix_messages_timestamp ON messages (timestamp);
