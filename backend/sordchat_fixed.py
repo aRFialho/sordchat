@@ -21,6 +21,9 @@ SECRET_KEY = os.getenv("SECRET_KEY", "sordchat_secret_key_super_secure_2024")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 IS_PRODUCTION = os.getenv("ENVIRONMENT", "development").lower() == "production"
+DEFAULT_FRONTEND_ORIGINS = [
+    "https://sordchat-web.onrender.com",
+]
 
 
 def normalize_database_url(database_url: str) -> str:
@@ -96,11 +99,12 @@ if DATABASE_URL.startswith("sqlite"):
 
 def get_cors_origins():
     configured = os.getenv("FRONTEND_ORIGINS", "")
+    origins = list(DEFAULT_FRONTEND_ORIGINS)
     if configured:
-        return [origin.strip() for origin in configured.split(",") if origin.strip()]
-    if IS_PRODUCTION:
-        return []
-    return ["http://127.0.0.1:3000", "http://localhost:3000"]
+        origins.extend(origin.strip() for origin in configured.split(",") if origin.strip())
+    if not IS_PRODUCTION:
+        origins.extend(["http://127.0.0.1:3000", "http://localhost:3000"])
+    return sorted(set(origins))
 
 
 app = FastAPI(title="SorDChat API", version="1.0.0")
