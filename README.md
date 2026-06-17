@@ -34,6 +34,7 @@ Configure `DATABASE_URL` com a connection string do Neon. Depois rode:
 
 ```powershell
 cd backend
+$env:DATABASE_URL="postgresql://USER:PASSWORD@HOST/neondb?sslmode=require"
 python scripts/deploy_db.py
 python scripts/seed_default_users.py
 ```
@@ -51,6 +52,7 @@ Configuracao sem custo no Render:
 - `autoDeployTrigger: off` evita deploy automatico a cada push; faca deploy manual quando quiser testar.
 - Nenhum banco Render Postgres, disco persistente, private service, worker, cron ou key-value e criado pelo blueprint.
 - O banco fica no Neon via `DATABASE_URL`.
+- `preDeployCommand` nao e usado porque o Render nao suporta pre-deploy em servicos free; rode `python scripts/deploy_db.py` manualmente antes do deploy e sempre que criar uma migration SQL.
 
 Variaveis para configurar no Render:
 
