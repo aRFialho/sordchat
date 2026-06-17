@@ -28,7 +28,7 @@ const initialColumns = [
       {
         id: 'task-1',
         title: 'Revisar rotas do backend',
-        description: 'Confirmar quais endpoints fazem parte da retomada.',
+        description: 'Confirmar integrações e rotas ativas para a operação.',
         priority: 'high',
         category: 'Backend',
         dueDate: '2026-06-21',
@@ -249,9 +249,9 @@ const Kanban = () => {
     const task = {
       id: `task-${Date.now()}`,
       title: newTask.trim(),
-      description: `Criada por ${user?.full_name || user?.username || 'usuario'} para retomada do projeto.`,
+      description: `Criada por ${user?.full_name || user?.username || 'usuario'} no quadro operacional.`,
       priority: 'medium',
-      category: 'Retomada',
+      category: 'Operacao',
       dueDate: '',
     };
 
@@ -278,10 +278,10 @@ const Kanban = () => {
       <section className="panel p-5">
         <div className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-end">
           <div>
-            <span className="badge">Modo local</span>
-            <h2 className="m-0 mt-3 text-2xl font-extrabold text-slate-950">Quadro de retomada</h2>
+            <span className="badge">Operacao</span>
+            <h2 className="m-0 mt-3 text-2xl font-extrabold text-slate-950">Quadro de tarefas</h2>
             <p className="m-0 mt-1 text-sm text-slate-500">
-              Arraste tarefas entre colunas. Esta tela evita endpoints antigos de Kanban enquanto o backend e reconstruido.
+              Arraste tarefas entre colunas para organizar prioridades, execucao e revisoes do time.
             </p>
           </div>
 

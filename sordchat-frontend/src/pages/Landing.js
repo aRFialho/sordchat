@@ -10,6 +10,7 @@ import {
   MonitorDown,
   ServerCog,
 } from 'lucide-react';
+import BrandLogo from '../components/common/BrandLogo';
 
 const downloadUrl = process.env.REACT_APP_DESKTOP_DOWNLOAD_URL || '/downloads/SorDChat-Desktop.exe';
 
@@ -18,11 +19,7 @@ const Landing = () => {
     <main className="landing-page">
       <header className="landing-nav">
         <Link className="landing-brand" to="/">
-          <span className="brand-mark">S</span>
-          <span>
-            <strong>SorDChat</strong>
-            <small>Workspace corporativo</small>
-          </span>
+          <BrandLogo />
         </Link>
 
         <nav className="landing-actions" aria-label="Acoes principais">
@@ -43,7 +40,7 @@ const Landing = () => {
             <CheckCircle2 size={14} />
             Pronto para Render + Neon
           </span>
-          <h1>Sua central simples para conversar, organizar tarefas e retomar atendimentos.</h1>
+          <h1>Sua central simples para conversar, organizar tarefas e acompanhar atendimentos.</h1>
           <p>
             O SorDChat une chat em tempo real, painel operacional e Kanban em uma interface leve para equipes internas.
             Use no navegador ou baixe o app desktop quando os builds forem publicados.

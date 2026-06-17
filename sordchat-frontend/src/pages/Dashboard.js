@@ -62,7 +62,7 @@ const Dashboard = () => {
     {
       icon: ListTodo,
       title: 'Quadro de tarefas',
-      detail: 'Modo local habilitado para testar fluxos sem depender de rotas antigas.',
+      detail: 'Organize prioridades, acompanhe responsaveis e mantenha o fluxo do time visivel.',
     },
     {
       icon: CheckCircle2,
@@ -84,7 +84,7 @@ const Dashboard = () => {
               Bem-vindo, {user?.full_name || user?.username}.
             </h2>
             <p className="m-0 mt-2 max-w-2xl text-slate-500">
-              Este painel resume a retomada do SorDChat: comunicacao, tarefas e base para atendimento interno.
+              Este painel resume comunicacao, tarefas e atendimento interno em um unico lugar.
             </p>
           </div>
 
@@ -100,7 +100,7 @@ const Dashboard = () => {
             </span>
             <span className="flex items-center gap-2">
               <Activity size={16} />
-              Versao de retomada local
+              Ambiente de producao
             </span>
           </div>
         </div>
@@ -131,7 +131,7 @@ const Dashboard = () => {
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <h3 className="m-0 text-lg font-extrabold text-slate-950">Atividade recente</h3>
-              <p className="m-0 mt-1 text-sm text-slate-500">Sinais principais para continuar o projeto.</p>
+              <p className="m-0 mt-1 text-sm text-slate-500">Sinais principais para acompanhar a operacao.</p>
             </div>
           </div>
 
@@ -155,7 +155,7 @@ const Dashboard = () => {
 
         <div className="panel p-6">
           <h3 className="m-0 text-lg font-extrabold text-slate-950">Acoes rapidas</h3>
-          <p className="m-0 mt-1 text-sm text-slate-500">Fluxos uteis para testar agora.</p>
+          <p className="m-0 mt-1 text-sm text-slate-500">Fluxos principais para o dia a dia.</p>
 
           <div className="mt-5 grid gap-3">
             <button className="button-secondary justify-between" onClick={() => navigate('/chat')}>

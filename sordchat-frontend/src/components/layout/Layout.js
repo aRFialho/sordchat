@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useWebSocket } from '../../contexts/WebSocketContext';
+import BrandLogo from '../common/BrandLogo';
 
 const pageMeta = {
   '/dashboard': ['Dashboard', 'Visao geral operacional do SorDChat'],
@@ -56,7 +57,7 @@ const Layout = ({ children }) => {
         <div className="sidebar__brand">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="brand-mark">S</div>
+              <BrandLogo showText={false} />
               {sidebarOpen && (
                 <div className="min-w-0">
                   <p className="m-0 truncate text-base font-extrabold text-white">SorDChat</p>

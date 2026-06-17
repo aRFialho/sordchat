@@ -362,15 +362,38 @@ button:disabled {
 }
 
 .brand-mark {
-  display: grid;
   width: 40px;
   height: 40px;
-  place-items: center;
   flex: 0 0 auto;
   border-radius: 8px;
-  background: #14b8a6;
-  color: #042f2e;
+  display: block;
+  object-fit: contain;
+}
+
+.brand-lockup {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-copy {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.brand-copy strong {
+  color: inherit;
+  font-size: 1rem;
   font-weight: 800;
+  line-height: 1.1;
+}
+
+.brand-copy small {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.25;
 }
 
 .icon-button {

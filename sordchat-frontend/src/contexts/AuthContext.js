@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }) => {
 
       // Verificar se é erro de conexão
       if (error.message.includes('fetch')) {
-        toast.error('Erro de conexao. Verifique se o backend esta rodando na porta 8001.');
+        toast.error('Nao foi possivel conectar ao SorDChat. Tente novamente em alguns instantes.');
       } else {
         toast.error(error.message);
       }

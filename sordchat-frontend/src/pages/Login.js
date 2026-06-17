@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Lock, MessageSquare, UserRound } from 'lucide-react';
+import { ArrowRight, Lock, MessageSquare, ShieldCheck, UserRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+import BrandLogo from '../components/common/BrandLogo';
 
 const demoCredentials = [
   { username: 'admin', password: 'admin123', role: 'Administrador' },
@@ -36,28 +37,25 @@ const Login = () => {
   return (
     <div className="grid min-h-screen grid-cols-1 bg-slate-950 text-white lg:grid-cols-[1.05fr_0.95fr]">
       <section className="flex min-h-[42vh] flex-col justify-between p-8 lg:min-h-screen lg:p-12">
-        <div className="flex items-center gap-3">
-          <div className="brand-mark">S</div>
-          <div>
-            <p className="m-0 text-lg font-extrabold">SorDChat</p>
-            <p className="m-0 text-sm text-slate-400">Comunicacao, tarefas e suporte</p>
-          </div>
-        </div>
+        <BrandLogo subtitle="Comunicacao, tarefas e suporte" textClassName="text-white" />
 
         <div className="max-w-2xl py-16">
-          <span className="badge border-teal-500/30 bg-teal-500/10 text-teal-200">Retomada do projeto</span>
+          <span className="badge border-teal-500/30 bg-teal-500/10 text-teal-200">
+            <ShieldCheck size={14} />
+            Ambiente seguro
+          </span>
           <h1 className="m-0 mt-5 text-4xl font-extrabold leading-tight text-white md:text-5xl">
             Um workspace direto para conversar, organizar e acompanhar o time.
           </h1>
           <p className="mt-5 max-w-xl text-base text-slate-300">
-            Interface revisada para testes locais, com login demo, chat em tempo real e quadro de tarefas.
+            Acesse o painel do SorDChat para conversar com a equipe, acompanhar atividades e organizar atendimentos.
           </p>
         </div>
 
         <div className="grid gap-3 text-sm text-slate-400 md:grid-cols-3">
-          <span>API local em 8001</span>
-          <span>React + FastAPI</span>
-          <span>SQLite para retomada rapida</span>
+          <span>Chat em tempo real</span>
+          <span>Painel operacional</span>
+          <span>Kanban integrado</span>
         </div>
       </section>
 

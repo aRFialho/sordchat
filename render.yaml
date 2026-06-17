@@ -16,7 +16,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: FRONTEND_ORIGINS
-        sync: false
+        value: https://sordchat-web.onrender.com
       - key: AUTO_SEED_USERS
         value: "false"
 
@@ -33,8 +33,8 @@ services:
         destination: /index.html
     envVars:
       - key: REACT_APP_API_URL
-        sync: false
+        value: https://sordchat-api.onrender.com
       - key: REACT_APP_WS_URL
-        sync: false
+        value: wss://sordchat-api.onrender.com
       - key: REACT_APP_DESKTOP_DOWNLOAD_URL
-        sync: false
+        value: /downloads/SorDChat-Desktop.exe
