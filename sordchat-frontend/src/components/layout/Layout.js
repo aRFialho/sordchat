@@ -72,7 +72,7 @@ const Layout = ({ children }) => {
               )}
             </div>
             <button
-              className="icon-button"
+              className="icon-button sidebar__collapse"
               onClick={() => setSidebarOpen((value) => !value)}
               aria-label={sidebarOpen ? 'Recolher menu' : 'Expandir menu'}
               title={sidebarOpen ? 'Recolher menu' : 'Expandir menu'}
@@ -108,8 +108,9 @@ const Layout = ({ children }) => {
 
         <div className="sidebar__profile mt-auto">
           <div className="mb-4 flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-slate-700 text-sm font-bold text-white">
+            <div className="sidebar__avatar grid h-10 w-10 place-items-center rounded-lg bg-slate-700 text-sm font-bold text-white">
               {(user?.full_name || user?.username || 'U').charAt(0).toUpperCase()}
+              <span className={`sidebar__avatar-status ${connected ? 'status-dot--online' : ''}`} />
             </div>
             {sidebarOpen && (
               <div className="min-w-0">
@@ -119,6 +120,7 @@ const Layout = ({ children }) => {
                 </p>
               </div>
             )}
+            {sidebarOpen && <ChevronRight className="ml-auto text-slate-400" size={16} />}
           </div>
           <button className="nav-item text-red-200 hover:text-white" onClick={handleLogout} title="Sair">
             <LogOut size={18} />

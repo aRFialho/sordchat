@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Download,
-  FileUp,
+  FileArchive,
+  FileImage,
+  FileSpreadsheet,
+  FileText,
+  Loader2,
   MessageCircle,
   Paperclip,
   Search,
@@ -80,6 +84,151 @@ const emojiGroups = [
     ],
   },
 ];
+
+const imageExtensions = new Set(['.apng', '.avif', '.bmp', '.gif', '.jpeg', '.jpg', '.png', '.svg', '.webp']);
+const spreadsheetExtensions = new Set(['.csv', '.xls', '.xlsx']);
+const archiveExtensions = new Set(['.zip', '.rar', '.7z']);
+
+const getFileExtension = (filename = '') => {
+  const cleanName = filename.split('?')[0];
+  const dotIndex = cleanName.lastIndexOf('.');
+  return dotIndex >= 0 ? cleanName.slice(dotIndex).toLowerCase() : '';
+};
+
+const getAttachmentIcon = (extension) => {
+  if (imageExtensions.has(extension)) {
+    return FileImage;
+  }
+  if (spreadsheetExtensions.has(extension)) {
+    return FileSpreadsheet;
+  }
+  if (archiveExtensions.has(extension)) {
+    return FileArchive;
+  }
+  return FileText;
+};
+
+const fetchAttachmentBlob = async (fileId) => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`${API_BASE_URL}/files/download/${fileId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Nao foi possivel carregar o anexo');
+  }
+
+  return response.blob();
+};
+
+const AttachmentPreview = ({ message, isOwn }) => {
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const filename = message.content || 'Arquivo';
+  const extension = getFileExtension(filename);
+  const isImage = imageExtensions.has(extension);
+  const Icon = getAttachmentIcon(extension);
+
+  useEffect(() => {
+    let objectUrl = '';
+    let cancelled = false;
+
+    if (!isImage || !message.file_path) {
+      return undefined;
+    }
+
+    setLoadingPreview(true);
+    setPreviewFailed(false);
+
+    fetchAttachmentBlob(message.file_path)
+      .then((blob) => {
+        if (cancelled) {
+          return;
+        }
+
+        objectUrl = URL.createObjectURL(blob);
+        setPreviewUrl(objectUrl);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPreviewFailed(true);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingPreview(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [isImage, message.file_path]);
+
+  const handleDownload = async () => {
+    if (!message.file_path) {
+      toast.error('Arquivo indisponivel para download.');
+      return;
+    }
+
+    try {
+      const blob = previewUrl ? null : await fetchAttachmentBlob(message.file_path);
+      const downloadUrl = previewUrl || URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      if (!previewUrl) {
+        window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      }
+    } catch (error) {
+      toast.error(error.message || 'Nao foi possivel baixar o arquivo.');
+    }
+  };
+
+  return (
+    <div className={`attachment-card ${isOwn ? 'attachment-card--own' : ''}`}>
+      {isImage && (
+        <div className="attachment-card__preview">
+          {previewUrl && <img src={previewUrl} alt={`Previa de ${filename}`} />}
+          {loadingPreview && (
+            <span className="attachment-card__loading">
+              <Loader2 size={18} />
+            </span>
+          )}
+          {!previewUrl && !loadingPreview && (
+            <span className="attachment-card__fallback">
+              <Icon size={24} />
+              {previewFailed ? 'Previa indisponivel' : 'Imagem'}
+            </span>
+          )}
+        </div>
+      )}
+
+      <div className="attachment-card__body">
+        <span className="attachment-card__icon">
+          <Icon size={18} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="attachment-card__name">{filename}</p>
+          <p className="attachment-card__meta">{extension ? extension.replace('.', '').toUpperCase() : 'Arquivo'}</p>
+        </div>
+        <button className="attachment-card__download" type="button" onClick={handleDownload} title="Baixar arquivo">
+          <Download size={16} />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const Chat = () => {
   const { user } = useAuth();
@@ -205,16 +354,16 @@ const Chat = () => {
   };
 
   return (
-    <div className="panel grid h-[calc(100vh-138px)] min-h-[620px] overflow-hidden lg:grid-cols-[320px_1fr]">
-      <aside className="flex min-h-0 flex-col border-b border-slate-200 lg:border-b-0 lg:border-r">
-        <div className="border-b border-slate-200 p-4">
+    <div className="chat-shell panel grid h-[calc(100vh-138px)] min-h-[620px] overflow-hidden lg:grid-cols-[320px_1fr]">
+      <aside className="chat-roster flex min-h-0 flex-col border-b border-slate-200 lg:border-b-0 lg:border-r">
+        <div className="chat-roster__head border-b border-slate-200 p-4">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="m-0 text-lg font-extrabold text-slate-950">Conversas</h2>
               <p className="m-0 text-sm text-slate-500">{connected ? 'Sincronizado' : 'Aguardando conexao'}</p>
             </div>
-            <span className={`badge ${connected ? 'badge--success' : 'badge--danger'}`}>
-              {connected ? 'Online' : 'Offline'}
+            <span className={`chat-sync ${connected ? 'chat-sync--online' : ''}`}>
+              {connected ? 'Sincronizado' : 'Offline'}
             </span>
           </div>
 
@@ -231,12 +380,12 @@ const Chat = () => {
 
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
           <button
-            className={`mb-2 flex w-full items-center gap-3 rounded-lg border p-3 text-left transition ${
-              !selectedUser ? 'border-teal-200 bg-teal-50' : 'border-transparent hover:bg-slate-50'
+            className={`chat-thread-item mb-2 flex w-full items-center gap-3 rounded-lg border p-3 text-left transition ${
+              !selectedUser ? 'chat-thread-item--active border-teal-200 bg-teal-50' : 'border-transparent hover:bg-slate-50'
             }`}
             onClick={() => setSelectedUser(null)}
           >
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-slate-900 text-white">
+            <div className="chat-thread-avatar grid h-10 w-10 place-items-center rounded-lg bg-slate-900 text-white">
               <Users size={18} />
             </div>
             <div className="min-w-0 flex-1">
@@ -252,19 +401,19 @@ const Chat = () => {
 
           <div className="grid gap-1">
             {onlineUsers.length === 0 ? (
-              <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">Nenhum outro usuario online.</p>
+              <p className="chat-empty-row rounded-lg bg-slate-50 p-3 text-sm text-slate-500">Nenhum outro usuario online.</p>
             ) : (
               onlineUsers.map((onlineUser) => (
                 <button
                   key={onlineUser.id}
-                  className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition ${
+                  className={`chat-thread-item flex w-full items-center gap-3 rounded-lg border p-3 text-left transition ${
                     selectedUser?.id === onlineUser.id
-                      ? 'border-teal-200 bg-teal-50'
+                      ? 'chat-thread-item--active border-teal-200 bg-teal-50'
                       : 'border-transparent hover:bg-slate-50'
                   }`}
                   onClick={() => setSelectedUser(onlineUser)}
                 >
-                  <div className="relative grid h-10 w-10 place-items-center rounded-lg bg-slate-100 font-bold text-slate-700">
+                  <div className="chat-thread-avatar relative grid h-10 w-10 place-items-center rounded-lg bg-slate-100 font-bold text-slate-700">
                     {(onlineUser.full_name || onlineUser.username || 'U').charAt(0).toUpperCase()}
                     <span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white bg-green-500" />
                   </div>
@@ -283,10 +432,10 @@ const Chat = () => {
         </div>
       </aside>
 
-      <section className="flex min-h-0 flex-col">
-        <header className="flex items-center justify-between border-b border-slate-200 p-4">
+      <section className="chat-window flex min-h-0 flex-col">
+        <header className="chat-window__head flex items-center justify-between border-b border-slate-200 p-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-lg bg-slate-100 text-slate-700">
+            <div className="chat-window__avatar grid h-11 w-11 place-items-center rounded-lg bg-slate-100 text-slate-700">
               {selectedUser ? (
                 <span className="font-extrabold">
                   {(selectedUser.full_name || selectedUser.username || 'U').charAt(0).toUpperCase()}
@@ -308,7 +457,7 @@ const Chat = () => {
           {searchTerm && <span className="badge">{filteredMessages.length} resultado(s)</span>}
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-5">
+        <div className="chat-canvas min-h-0 flex-1 overflow-y-auto bg-slate-50 p-5">
           {!connected && (
             <div className="empty-state min-h-[320px]">
               <div className="empty-state__icon">
@@ -337,8 +486,8 @@ const Chat = () => {
               return (
                 <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`message-card max-w-[min(680px,82%)] p-3 ${
-                      isOwn ? 'border-teal-200 bg-teal-50 text-slate-950' : 'bg-white text-slate-900'
+                    className={`chat-message message-card max-w-[min(680px,82%)] p-3 ${
+                      isOwn ? 'chat-message--own border-teal-200 bg-teal-50 text-slate-950' : 'chat-message--other bg-white text-slate-900'
                     }`}
                   >
                     {!isOwn && !selectedUser && (
@@ -346,23 +495,7 @@ const Chat = () => {
                     )}
 
                     {isFile ? (
-                      <div className="flex items-center gap-3">
-                        <div className={`grid h-9 w-9 place-items-center rounded-lg ${isOwn ? 'bg-teal-100 text-teal-800' : 'bg-slate-100 text-slate-700'}`}>
-                          <FileUp size={18} />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="m-0 truncate text-sm font-bold text-slate-950">{message.content}</p>
-                          <a
-                            className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-teal-700 underline"
-                            href={`${API_BASE_URL}/files/download/${message.file_path}`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <Download size={13} />
-                            Baixar
-                          </a>
-                        </div>
-                      </div>
+                      <AttachmentPreview message={message} isOwn={isOwn} />
                     ) : (
                       <p className="m-0 whitespace-pre-wrap text-sm text-slate-950">
                         {message.content}
@@ -385,7 +518,7 @@ const Chat = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        <footer className="border-t border-slate-200 bg-white p-4">
+        <footer className="chat-composer border-t border-slate-200 bg-white p-4">
           {showEmojiPicker && (
             <div className="emoji-picker mb-3">
               <div className="emoji-picker__tabs" role="tablist" aria-label="Categorias de emoji">
@@ -415,7 +548,7 @@ const Chat = () => {
             </div>
           )}
 
-          <form className="flex items-center gap-2" onSubmit={handleSubmit}>
+          <form className="chat-composer__form flex items-center gap-2" onSubmit={handleSubmit}>
             <button
               className="icon-button icon-button--light"
               type="button"
