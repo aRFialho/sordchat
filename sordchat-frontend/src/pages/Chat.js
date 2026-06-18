@@ -338,7 +338,7 @@ const Chat = () => {
                 <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                   <div
                     className={`message-card max-w-[min(680px,82%)] p-3 ${
-                      isOwn ? 'border-teal-700 bg-teal-700 text-white' : 'bg-white text-slate-900'
+                      isOwn ? 'border-teal-200 bg-teal-50 text-slate-950' : 'bg-white text-slate-900'
                     }`}
                   >
                     {!isOwn && !selectedUser && (
@@ -347,15 +347,13 @@ const Chat = () => {
 
                     {isFile ? (
                       <div className="flex items-center gap-3">
-                        <div className={`grid h-9 w-9 place-items-center rounded-lg ${isOwn ? 'bg-white/15' : 'bg-slate-100'}`}>
+                        <div className={`grid h-9 w-9 place-items-center rounded-lg ${isOwn ? 'bg-teal-100 text-teal-800' : 'bg-slate-100 text-slate-700'}`}>
                           <FileUp size={18} />
                         </div>
                         <div className="min-w-0">
-                          <p className="m-0 truncate text-sm font-bold">{message.content}</p>
+                          <p className="m-0 truncate text-sm font-bold text-slate-950">{message.content}</p>
                           <a
-                            className={`mt-1 inline-flex items-center gap-1 text-xs font-bold underline ${
-                              isOwn ? 'text-teal-50' : 'text-teal-700'
-                            }`}
+                            className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-teal-700 underline"
                             href={`${API_BASE_URL}/files/download/${message.file_path}`}
                             target="_blank"
                             rel="noreferrer"
@@ -366,12 +364,12 @@ const Chat = () => {
                         </div>
                       </div>
                     ) : (
-                      <p className={`m-0 whitespace-pre-wrap text-sm ${isOwn ? 'text-white' : 'text-slate-900'}`}>
+                      <p className="m-0 whitespace-pre-wrap text-sm text-slate-950">
                         {message.content}
                       </p>
                     )}
 
-                    <p className={`m-0 mt-2 text-[11px] ${isOwn ? 'text-teal-50' : 'text-slate-500'}`}>
+                    <p className="m-0 mt-2 text-[11px] text-slate-500">
                       {formatTime(message.timestamp)}
                     </p>
                   </div>
