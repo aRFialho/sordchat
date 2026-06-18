@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Cake, Mail, PhoneCall, RefreshCw, Search, ShieldCheck, UserRoundCheck, Users as UsersIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../config';
+import { isBirthdayToday } from '../utils/birthdays';
 
 const accessLabel = {
   master: 'Administrador',
@@ -100,8 +101,16 @@ const Users = () => {
           filteredUsers.map((item) => (
             <article className="panel p-4" key={item.id}>
               <div className="flex items-start gap-3">
-                <div className="grid h-12 w-12 place-items-center rounded-lg bg-slate-900 text-base font-extrabold text-white">
+                <div className={`birthday-list-avatar ${isBirthdayToday(item.birthday) ? 'birthday-list-avatar--festive' : ''}`}>
                   {(item.full_name || item.username || 'U').charAt(0).toUpperCase()}
+                  {isBirthdayToday(item.birthday) && (
+                    <>
+                      <span className="party-hat" />
+                      <span className="avatar-confetti avatar-confetti--one" />
+                      <span className="avatar-confetti avatar-confetti--two" />
+                      <span className="avatar-confetti avatar-confetti--three" />
+                    </>
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="m-0 truncate text-base font-extrabold text-slate-950">{item.full_name || item.username}</h3>

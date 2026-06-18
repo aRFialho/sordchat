@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell,
   BriefcaseBusiness,
+  Cake,
   ChevronLeft,
   ChevronRight,
   Files,
@@ -17,6 +18,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useWebSocket } from '../../contexts/WebSocketContext';
 import BrandLogo from '../common/BrandLogo';
+import { isBirthdayToday } from '../../utils/birthdays';
 
 const pageMeta = {
   '/dashboard': ['Dashboard', 'Visao geral operacional do SorDChat'],
@@ -26,6 +28,7 @@ const pageMeta = {
   '/kanban': ['Tasks', 'Quadro de execucao do time'],
   '/files': ['Arquivos', 'Documentos e anexos compartilhados'],
   '/users': ['Usuarios', 'Equipe e permissoes'],
+  '/birthdays': ['Aniversarios', 'Ultimos e proximos aniversariantes'],
   '/admin': ['Admin', 'Gestao global do workspace'],
   '/coordinator': ['Coordenacao', 'Gestao do setor coordenado'],
   '/notifications': ['Notificacoes', 'Eventos recentes do workspace'],
@@ -45,12 +48,14 @@ const Layout = ({ children }) => {
     { name: 'Tasks', icon: ListTodo, path: '/tasks', show: true },
     { name: 'Arquivos', icon: Files, path: '/files', show: true },
     { name: 'Usuarios', icon: Users, path: '/users', show: isCoordinator() },
+    { name: 'Aniversarios', icon: Cake, path: '/birthdays', show: true },
     { name: 'Admin', icon: ShieldCheck, path: '/admin', show: isAdmin() },
     { name: 'Coordenacao', icon: BriefcaseBusiness, path: '/coordinator', show: isCoordinator() },
     { name: 'Alertas', icon: Bell, path: '/notifications', show: true },
   ];
 
   const [title, description] = pageMeta[location.pathname] || ['SorDChat', 'Sistema corporativo de comunicacao'];
+  const userBirthdayToday = isBirthdayToday(user?.birthday);
 
   const handleLogout = async () => {
     await logout();
@@ -108,9 +113,17 @@ const Layout = ({ children }) => {
 
         <div className="sidebar__profile mt-auto">
           <div className="mb-4 flex items-center gap-3">
-            <div className="sidebar__avatar grid h-10 w-10 place-items-center rounded-lg bg-slate-700 text-sm font-bold text-white">
+            <div className={`sidebar__avatar grid h-10 w-10 place-items-center rounded-lg bg-slate-700 text-sm font-bold text-white ${userBirthdayToday ? 'sidebar__avatar--birthday' : ''}`}>
               {(user?.full_name || user?.username || 'U').charAt(0).toUpperCase()}
               <span className={`sidebar__avatar-status ${connected ? 'status-dot--online' : ''}`} />
+              {userBirthdayToday && (
+                <>
+                  <span className="party-hat" />
+                  <span className="avatar-confetti avatar-confetti--one" />
+                  <span className="avatar-confetti avatar-confetti--two" />
+                  <span className="avatar-confetti avatar-confetti--three" />
+                </>
+              )}
             </div>
             {sidebarOpen && (
               <div className="min-w-0">

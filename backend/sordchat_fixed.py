@@ -642,6 +642,18 @@ async def list_users(current_user: User = Depends(get_current_user)):
         return [serialize_user(item) for item in users]
 
 
+@app.get("/birthdays/")
+async def list_birthdays(current_user: User = Depends(get_current_user)):
+    with SessionLocal() as db:
+        users = (
+            db.query(User)
+            .filter(User.is_active == True, User.birthday.isnot(None), User.birthday != "")
+            .order_by(User.full_name.asc())
+            .all()
+        )
+        return [serialize_user(item) for item in users]
+
+
 @app.post("/users/")
 async def create_user(payload: dict, current_user: User = Depends(get_current_user)):
     if not is_admin(current_user) and not is_coordinator(current_user):
