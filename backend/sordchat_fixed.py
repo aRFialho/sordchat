@@ -119,6 +119,22 @@ class ChatGroup(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+class TaskItem(Base):
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    priority = Column(String(40), default="medium", nullable=False)
+    category = Column(String(100), default="Operacao", nullable=False)
+    status = Column(String(40), default="backlog", nullable=False, index=True)
+    due_date = Column(String(10), nullable=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, nullable=True)
+
+
 class Message(Base):
     __tablename__ = "messages"
 
@@ -320,6 +336,26 @@ def serialize_group(group: ChatGroup, db) -> dict:
     }
 
 
+def serialize_task(task: TaskItem, db) -> dict:
+    created_by = db.query(User).filter(User.id == task.created_by_id).first()
+    assigned_to = db.query(User).filter(User.id == task.assigned_to_id).first() if task.assigned_to_id else None
+    return {
+        "id": task.id,
+        "title": task.title,
+        "description": task.description,
+        "priority": task.priority,
+        "category": task.category,
+        "status": task.status,
+        "due_date": task.due_date,
+        "created_by_id": task.created_by_id,
+        "created_by_name": created_by.full_name if created_by else None,
+        "assigned_to_id": task.assigned_to_id,
+        "assigned_to_name": assigned_to.full_name if assigned_to else None,
+        "created_at": task.created_at.isoformat() if task.created_at else None,
+        "updated_at": task.updated_at.isoformat() if task.updated_at else None,
+    }
+
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[int, WebSocket] = {}
@@ -484,6 +520,151 @@ def split_sql_statements(sql: str) -> list[str]:
     if statement:
         statements.append(statement)
     return statements
+
+
+def normalize_text(value: str) -> str:
+    replacements = {
+        "á": "a",
+        "à": "a",
+        "ã": "a",
+        "â": "a",
+        "é": "e",
+        "ê": "e",
+        "í": "i",
+        "ó": "o",
+        "ô": "o",
+        "õ": "o",
+        "ú": "u",
+        "ç": "c",
+    }
+    normalized = value.lower()
+    for source, target in replacements.items():
+        normalized = normalized.replace(source, target)
+    return normalized
+
+
+def infer_priority(text: str, task_format: bool = False) -> str:
+    normalized = normalize_text(text)
+    if any(word in normalized for word in ["urgente", "critico", "critica", "alta", "prioridade maxima", "importante"]):
+        return "high" if task_format else "Alta"
+    if any(word in normalized for word in ["baixa", "sem pressa", "quando der", "normal baixa"]):
+        return "low" if task_format else "Baixa"
+    return "medium" if task_format else "Media"
+
+
+def infer_due_date(text: str) -> Optional[str]:
+    normalized = normalize_text(text)
+    today = datetime.utcnow().date()
+    if "amanha" in normalized:
+        return (today + timedelta(days=1)).isoformat()
+    if "hoje" in normalized:
+        return today.isoformat()
+
+    tokens = normalized.replace(",", " ").replace(".", " ").split()
+    for token in tokens:
+        parts = token.split("/")
+        if len(parts) not in {2, 3}:
+            continue
+        try:
+            day = int(parts[0])
+            month = int(parts[1])
+            year = int(parts[2]) if len(parts) == 3 else today.year
+            return datetime(year, month, day).date().isoformat()
+        except ValueError:
+            continue
+    return None
+
+
+def infer_intent(text: str) -> str:
+    normalized = normalize_text(text)
+    task_words = ["tarefa", "task", "kanban", "atividade", "afazer", "a fazer", "pendencia"]
+    ticket_words = ["ticket", "chamado", "solicitacao", "suporte", "problema", "incidente", "atendimento"]
+    task_score = sum(1 for word in task_words if word in normalized)
+    ticket_score = sum(1 for word in ticket_words if word in normalized)
+    return "task" if task_score > ticket_score else "ticket"
+
+
+def infer_department(text: str, users: list[User], fallback: Optional[str]) -> str:
+    normalized = normalize_text(text)
+    departments = {department for department in DEFAULT_DEPARTMENTS}
+    departments.update(user.department for user in users if user.department)
+
+    for department in sorted(departments, key=len, reverse=True):
+        if normalize_text(department) in normalized:
+            return department
+
+    aliases = {
+        "rh": "RH",
+        "recursos humanos": "RH",
+        "financeiro": "Financeiro",
+        "financas": "Financeiro",
+        "ti": "TI",
+        "tecnologia": "TI",
+        "suporte": "Suporte",
+        "comercial": "Comercial",
+        "operacao": "Operacao",
+        "operacoes": "Operacao",
+        "produto": "Produto",
+    }
+    for alias, department in aliases.items():
+        if alias in normalized:
+            return department
+
+    return fallback or "Operacao"
+
+
+def infer_assignee(text: str, users: list[User]) -> Optional[User]:
+    normalized = normalize_text(text)
+    for user in users:
+        candidates = [user.username, user.email, user.full_name]
+        if any(candidate and normalize_text(candidate) in normalized for candidate in candidates):
+            return user
+    return None
+
+
+def build_assistant_title(text: str, intent: str) -> str:
+    clean = " ".join(text.strip().split())
+    prefixes = [
+        "crie um ticket",
+        "criar ticket",
+        "abra um ticket",
+        "abrir ticket",
+        "crie uma tarefa",
+        "criar tarefa",
+        "adicione uma tarefa",
+        "registrar",
+        "registre",
+    ]
+    normalized = normalize_text(clean)
+    title = clean
+    for prefix in prefixes:
+        if normalized.startswith(prefix):
+            title = clean[len(prefix):].strip(" :-")
+            break
+    if not title:
+        title = "Novo ticket" if intent == "ticket" else "Nova tarefa"
+    return title[:180]
+
+
+def plan_assistant_action(text: str, current_user: User, db) -> dict:
+    users = db.query(User).filter(User.is_active == True).all()
+    intent = infer_intent(text)
+    assignee = infer_assignee(text, users)
+    department = infer_department(text, users, current_user.department)
+    title = build_assistant_title(text, intent)
+    due_date = infer_due_date(text)
+
+    return {
+        "intent": intent,
+        "title": title,
+        "description": text.strip(),
+        "department": department,
+        "assigned_to_id": assignee.id if assignee else None,
+        "assigned_to_name": assignee.full_name if assignee else None,
+        "ticket_priority": infer_priority(text, task_format=False),
+        "task_priority": infer_priority(text, task_format=True),
+        "due_date": due_date,
+    }
 
 
 def run_startup_migrations():
@@ -859,6 +1040,172 @@ async def update_ticket(ticket_id: int, payload: dict, current_user: User = Depe
         db.commit()
         db.refresh(ticket)
         return serialize_ticket(ticket, db)
+
+
+@app.get("/tasks/")
+async def list_tasks(
+    status: Optional[str] = Query(default=None),
+    current_user: User = Depends(get_current_user),
+):
+    with SessionLocal() as db:
+        query = db.query(TaskItem)
+        if status:
+            query = query.filter(TaskItem.status == status)
+        if not is_admin(current_user):
+            if is_coordinator(current_user) and current_user.department:
+                query = query.filter(TaskItem.category == current_user.department)
+            else:
+                query = query.filter(or_(TaskItem.created_by_id == current_user.id, TaskItem.assigned_to_id == current_user.id))
+        tasks = query.order_by(TaskItem.created_at.desc()).all()
+        return [serialize_task(task, db) for task in tasks]
+
+
+@app.post("/tasks/")
+async def create_task(payload: dict, current_user: User = Depends(get_current_user)):
+    title = str(payload.get("title") or "").strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="Titulo da tarefa e obrigatorio.")
+
+    category = str(payload.get("category") or current_user.department or "Operacao").strip()
+    assigned_to_id = payload.get("assigned_to_id")
+    if is_coordinator(current_user) and not is_admin(current_user) and category != current_user.department:
+        raise HTTPException(status_code=403, detail="Coordenador so pode criar tarefas do proprio setor.")
+
+    with SessionLocal() as db:
+        assigned_user = None
+        if assigned_to_id:
+            assigned_user = db.query(User).filter(User.id == int(assigned_to_id), User.is_active == True).first()
+            if not assigned_user:
+                raise HTTPException(status_code=400, detail="Responsavel nao encontrado.")
+            if is_coordinator(current_user) and not is_admin(current_user) and assigned_user.department != current_user.department:
+                raise HTTPException(status_code=403, detail="Responsavel precisa estar no mesmo setor.")
+
+        task = TaskItem(
+            title=title,
+            description=str(payload.get("description") or "").strip() or None,
+            priority=str(payload.get("priority") or "medium").strip(),
+            category=category,
+            status=str(payload.get("status") or "backlog").strip(),
+            due_date=str(payload.get("due_date") or "").strip() or None,
+            created_by_id=current_user.id,
+            assigned_to_id=assigned_user.id if assigned_user else None,
+        )
+        db.add(task)
+        db.commit()
+        db.refresh(task)
+        return serialize_task(task, db)
+
+
+@app.patch("/tasks/{task_id}")
+async def update_task(task_id: int, payload: dict, current_user: User = Depends(get_current_user)):
+    with SessionLocal() as db:
+        task = db.query(TaskItem).filter(TaskItem.id == task_id).first()
+        if not task:
+            raise HTTPException(status_code=404, detail="Tarefa nao encontrada.")
+
+        can_edit = is_admin(current_user) or task.created_by_id == current_user.id or task.assigned_to_id == current_user.id
+        if not can_edit and is_coordinator(current_user) and current_user.department:
+            can_edit = task.category == current_user.department
+        if not can_edit:
+            raise HTTPException(status_code=403, detail="Sem permissao para editar esta tarefa.")
+
+        for field in ["title", "description", "priority", "category", "status", "due_date"]:
+            if field in payload:
+                value = str(payload.get(field) or "").strip() or None
+                if field in ["title", "priority", "category", "status"]:
+                    value = value or getattr(task, field)
+                setattr(task, field, value)
+
+        if "assigned_to_id" in payload:
+            assigned_to_id = payload.get("assigned_to_id")
+            if assigned_to_id:
+                assigned_user = db.query(User).filter(User.id == int(assigned_to_id), User.is_active == True).first()
+                if not assigned_user:
+                    raise HTTPException(status_code=400, detail="Responsavel nao encontrado.")
+                task.assigned_to_id = assigned_user.id
+            else:
+                task.assigned_to_id = None
+
+        task.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(task)
+        return serialize_task(task, db)
+
+
+@app.delete("/tasks/{task_id}")
+async def delete_task(task_id: int, current_user: User = Depends(get_current_user)):
+    with SessionLocal() as db:
+        task = db.query(TaskItem).filter(TaskItem.id == task_id).first()
+        if not task:
+            raise HTTPException(status_code=404, detail="Tarefa nao encontrada.")
+        if not is_admin(current_user) and task.created_by_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Sem permissao para remover esta tarefa.")
+        db.delete(task)
+        db.commit()
+        return {"message": "Tarefa removida."}
+
+
+@app.post("/assistant/requests")
+async def assistant_request(payload: dict, current_user: User = Depends(get_current_user)):
+    message = str(payload.get("message") or "").strip()
+    execute = bool(payload.get("execute", True))
+    if not message:
+        raise HTTPException(status_code=400, detail="Informe uma solicitacao para o assistente.")
+
+    with SessionLocal() as db:
+        plan = plan_assistant_action(message, current_user, db)
+        if is_coordinator(current_user) and not is_admin(current_user) and plan["department"] != current_user.department:
+            raise HTTPException(status_code=403, detail="Coordenador so pode criar itens do proprio setor.")
+
+        response = {
+            "intent": plan["intent"],
+            "plan": plan,
+            "executed": False,
+            "ticket": None,
+            "task": None,
+            "reply": "",
+        }
+
+        if not execute:
+            response["reply"] = "Plano montado. Confirme para criar no SorDChat."
+            return response
+
+        if plan["intent"] == "ticket":
+            ticket = Ticket(
+                title=plan["title"],
+                description=plan["description"],
+                priority=plan["ticket_priority"],
+                status="Aberto",
+                department=plan["department"],
+                channel="Assistente",
+                created_by_id=current_user.id,
+                assigned_to_id=plan["assigned_to_id"],
+            )
+            db.add(ticket)
+            db.commit()
+            db.refresh(ticket)
+            response["executed"] = True
+            response["ticket"] = serialize_ticket(ticket, db)
+            response["reply"] = f"Criei o ticket #{ticket.id} para {plan['department']} com prioridade {plan['ticket_priority']}."
+            return response
+
+        task = TaskItem(
+            title=plan["title"],
+            description=plan["description"],
+            priority=plan["task_priority"],
+            category=plan["department"],
+            status="backlog",
+            due_date=plan["due_date"],
+            created_by_id=current_user.id,
+            assigned_to_id=plan["assigned_to_id"],
+        )
+        db.add(task)
+        db.commit()
+        db.refresh(task)
+        response["executed"] = True
+        response["task"] = serialize_task(task, db)
+        response["reply"] = f"Criei a tarefa #{task.id} no Kanban em {plan['department']}."
+        return response
 
 
 @app.get("/admin/overview")

@@ -2,131 +2,288 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
+  Bot,
   CheckCircle2,
   Download,
-  LayoutDashboard,
+  KanbanSquare,
   LockKeyhole,
   MessageSquare,
   MonitorDown,
-  ServerCog,
+  Sparkles,
+  Ticket,
+  Users,
 } from 'lucide-react';
 import BrandLogo from '../components/common/BrandLogo';
 import { DESKTOP_DOWNLOAD_URL } from '../config';
 
+const features = [
+  ['Chat interno por setor', 'Canais para RH, financeiro, TI, estoque, comercial e operacao.', MessageSquare],
+  ['Tickets rastreaveis', 'Solicitacoes com responsavel, prioridade, status e historico.', Ticket],
+  ['Kanban operacional', 'Demandas organizadas entre backlog, execucao, revisao e concluido.', KanbanSquare],
+  ['Assistente SorDChat', 'Transforma pedidos em tickets e tarefas com setor e prioridade.', Bot],
+  ['Permissoes por perfil', 'Admin, coordenador e usuario com visibilidade adequada.', LockKeyhole],
+  ['Equipe conectada', 'Funcionarios, setores e liderancas alinhados em tempo real.', Users],
+];
+
+const moduleCards = [
+  ['CH', 'Chat interno', 'Conversas entre funcionarios e grupos por setor.'],
+  ['TK', 'Tickets', 'Solicitacoes rastreaveis com responsavel.'],
+  ['KB', 'Kanban', 'Fluxo visual de tarefas e execucao.'],
+  ['AI', 'Assistente', 'Cria tickets e tarefas a partir de texto livre.'],
+];
+
 const Landing = () => {
   return (
-    <main className="landing-page">
-      <header className="landing-nav">
-        <Link className="landing-brand" to="/">
-          <BrandLogo />
-        </Link>
+    <main className="landing-page landing-page--neon" id="top">
+      <div className="landing-noise" aria-hidden="true" />
 
-        <nav className="landing-actions" aria-label="Acoes principais">
-          <a className="button-secondary" href={DESKTOP_DOWNLOAD_URL}>
-            <Download size={17} />
-            Baixar app
+      <header className="lp-nav-wrap">
+        <nav className="lp-nav" aria-label="Navegacao da landing">
+          <a className="lp-brand" href="#top" aria-label="SorDChat inicio">
+            <BrandLogo subtitle="" />
           </a>
-          <Link className="button-primary" to="/login">
-            Login web
-            <ArrowRight size={17} />
-          </Link>
+          <div className="lp-nav-links">
+            <a href="#recursos">Recursos</a>
+            <a href="#painel">Painel</a>
+            <a href="#modulos">Modulos</a>
+            <a href="#assistente">Assistente</a>
+          </div>
+          <div className="lp-nav-actions">
+            <a className="lp-btn" href={DESKTOP_DOWNLOAD_URL}>
+              <Download size={17} />
+              App desktop
+            </a>
+            <Link className="lp-btn lp-btn--primary" to="/login">
+              Entrar
+              <ArrowRight size={17} />
+            </Link>
+          </div>
         </nav>
       </header>
 
-      <section className="landing-hero">
-        <div className="landing-hero__copy">
-          <span className="badge badge--success">
-            <CheckCircle2 size={14} />
-            Pronto para Render + Neon
-          </span>
-          <h1>Sua central simples para conversar, organizar tarefas e acompanhar atendimentos.</h1>
-          <p>
-            O SorDChat une chat em tempo real, painel operacional e Kanban em uma interface leve para equipes internas.
-            Use no navegador ou baixe o app desktop quando os builds forem publicados.
-          </p>
+      <section className="lp-hero">
+        <div className="lp-container lp-hero-grid">
+          <div>
+            <div className="lp-eyebrow">
+              <span className="lp-pulse-dot" />
+              Comunicacao interna empresarial em tempo real
+            </div>
+            <h1>
+              Organize mensagens, tickets e tarefas{' '}
+              <span className="lp-gradient-text">entre funcionarios e setores.</span>
+            </h1>
+            <p className="lp-lead">
+              O SorDChat conecta funcionarios, departamentos e liderancas, transformando solicitacoes do dia a dia em
+              tickets, tarefas e fluxos acompanhados por Kanban, status, responsaveis e prioridades.
+            </p>
+            <div className="lp-hero-actions">
+              <Link className="lp-btn lp-btn--primary" to="/login">
+                Comecar agora
+                <ArrowRight size={18} />
+              </Link>
+              <a className="lp-btn" href="#painel">
+                Ver experiencia
+              </a>
+              <a className="lp-btn" href={DESKTOP_DOWNLOAD_URL}>
+                <MonitorDown size={18} />
+                Baixar app
+              </a>
+            </div>
+            <div className="lp-trust-row">
+              <div className="lp-avatar-stack" aria-hidden="true">
+                <span>TI</span>
+                <span>RH</span>
+                <span>FN</span>
+                <span>+</span>
+              </div>
+              <span>Feito para RH, financeiro, TI, operacoes, comercial, estoque e liderancas.</span>
+            </div>
+            <div className="lp-metrics-mini">
+              <div><strong>72%</strong><span>menos ruido interno</span></div>
+              <div><strong>100%</strong><span>solicitacoes rastreadas</span></div>
+              <div><strong>3x</strong><span>mais organizacao por setor</span></div>
+            </div>
+          </div>
 
-          <div className="landing-cta">
-            <Link className="button-primary" to="/login">
-              Entrar pelo navegador
+          <div className="lp-hero-visual" aria-label="Previa visual do SorDChat">
+            <div className="lp-radar" />
+            <div className="lp-floating-card lp-floating-card--one">
+              <small>Tickets internos</small>
+              <strong>18 solicitacoes priorizadas</strong>
+              <div className="lp-mini-bar"><i /></div>
+            </div>
+            <div className="lp-floating-card lp-floating-card--two">
+              <small>Kanban ativo</small>
+              <strong>Etapas atualizadas</strong>
+              <div className="lp-mini-bar"><i /></div>
+            </div>
+            <div className="lp-floating-card lp-floating-card--three">
+              <small>Setores online</small>
+              <strong>RH - TI - Financeiro</strong>
+              <div className="lp-mini-bar"><i /></div>
+            </div>
+
+            <div className="lp-chat-window">
+              <div className="lp-chat-head">
+                <div className="lp-agent-id">
+                  <div className="lp-agent-face">
+                    <Sparkles size={21} />
+                  </div>
+                  <div>
+                    <strong>Assistente SorDChat</strong>
+                    <small>Central interna inteligente</small>
+                  </div>
+                </div>
+                <span className="lp-status-pill">online</span>
+              </div>
+              <div className="lp-chat-body">
+                <div className="lp-bubble lp-bubble--bot">
+                  Ola! Posso registrar sua solicitacao e encaminhar para o setor responsavel.
+                </div>
+                <div className="lp-bubble lp-bubble--user">Crie um ticket urgente para TI sobre notebook travando.</div>
+                <div className="lp-bubble lp-bubble--bot">
+                  Ticket criado, prioridade alta, setor TI e status Aberto.
+                </div>
+                <div className="lp-chat-input">
+                  <span>Digite uma solicitacao interna...</span>
+                  <div><ArrowRight size={18} /></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="lp-section" id="recursos">
+        <div className="lp-container">
+          <div className="lp-section-title">
+            <div className="lp-eyebrow"><span className="lp-pulse-dot" /> Recursos principais</div>
+            <h2>Comunicacao interna com processos visiveis e rastreaveis.</h2>
+            <p>Uma experiencia para funcionarios enviarem mensagens, abrirem chamados e acompanharem prazos.</p>
+          </div>
+          <div className="lp-grid-3">
+            {features.map(([title, description, Icon]) => (
+              <article className="lp-feature-card" key={title}>
+                <div className="lp-icon"><Icon size={23} /></div>
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="lp-section" id="painel">
+        <div className="lp-container">
+          <div className="lp-section-title">
+            <div className="lp-eyebrow"><span className="lp-pulse-dot" /> Painel de operacao interna</div>
+            <h2>Controle conversas, tickets e Kanban em uma tela moderna.</h2>
+            <p>Gestores e setores trabalham com clareza, sem conversas perdidas e sem solicitacoes esquecidas.</p>
+          </div>
+          <div className="lp-dashboard">
+            <div className="lp-panel">
+              <div className="lp-panel-top">
+                <strong>Tickets internos</strong>
+                <span className="lp-status-pill">tempo real</span>
+              </div>
+              <div className="lp-panel-content lp-conversation-list">
+                {[
+                  ['A', 'Joao Pereira', 'Solicitacao de notebook', 'TI'],
+                  ['M', 'Mariana Costa', 'Reembolso aguardando aprovacao', 'Financeiro'],
+                  ['E', 'Equipe Estoque', 'Separacao de material pendente', 'Estoque'],
+                  ['RH', 'RH Interno', 'Admissao e documentos', 'RH'],
+                ].map(([avatar, name, detail, tag]) => (
+                  <div className="lp-conversation" key={name}>
+                    <span>{avatar}</span>
+                    <div><strong>{name}</strong><small>{detail}</small></div>
+                    <em>{tag}</em>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="lp-panel lp-big-screen">
+              <div className="lp-panel-top">
+                <strong>Kanban de tickets</strong>
+                <span className="lp-status-pill">sincronizado</span>
+              </div>
+              <div className="lp-panel-content">
+                <div className="lp-kpi-row">
+                  <div><span>Prazo medio</span><strong>1d 4h</strong></div>
+                  <div><span>Tickets abertos</span><strong>42</strong></div>
+                  <div><span>Concluidos</span><strong>186</strong></div>
+                </div>
+                <div className="lp-kanban-preview">
+                  <div><strong>A fazer</strong><span>Compra de materiais</span><span>Cadastro de funcionario</span></div>
+                  <div className="active"><strong>Em andamento</strong><span>Notebook para equipe</span><span>Reembolso financeiro</span></div>
+                  <div><strong>Concluido</strong><span>Acesso ao sistema</span><span>Documento aprovado</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="lp-section" id="assistente">
+        <div className="lp-container lp-assistant-strip">
+          <div>
+            <div className="lp-eyebrow"><span className="lp-pulse-dot" /> Assistente SorDChat</div>
+            <h2>Escreva o pedido. O SorDChat entende e cria o fluxo.</h2>
+            <p>
+              O assistente interpreta solicitacoes como "abra um ticket para o financeiro" ou "crie uma tarefa para Ana
+              ate amanha" e transforma em tickets ou tarefas com prioridade, setor e responsavel.
+            </p>
+          </div>
+          <Link className="lp-btn lp-btn--primary" to="/assistant">
+            Abrir assistente
+            <Bot size={18} />
+          </Link>
+        </div>
+      </section>
+
+      <section className="lp-section" id="modulos">
+        <div className="lp-container">
+          <div className="lp-section-title">
+            <div className="lp-eyebrow"><span className="lp-pulse-dot" /> Modulos do SorDChat</div>
+            <h2>Conecte comunicacao, tickets e gestao visual em um unico fluxo.</h2>
+          </div>
+          <div className="lp-modules">
+            {moduleCards.map(([badge, title, detail]) => (
+              <article className="lp-module-card" key={title}>
+                <span>{badge}</span>
+                <div><h3>{title}</h3><p>{detail}</p></div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="lp-section">
+        <div className="lp-container lp-cta-box">
+          <div>
+            <div className="lp-eyebrow"><span className="lp-pulse-dot" /> Pronto para organizar sua empresa?</div>
+            <h2>Transforme comunicacao interna em processo organizado.</h2>
+            <p>Use web, desktop, tickets, tarefas, Kanban e assistente inteligente na mesma central.</p>
+          </div>
+          <div className="lp-cta-actions">
+            <Link className="lp-btn lp-btn--primary" to="/login">
+              Entrar no SorDChat
               <ArrowRight size={18} />
             </Link>
-            <a className="button-secondary" href={DESKTOP_DOWNLOAD_URL}>
-              <MonitorDown size={18} />
-              Download desktop
+            <a className="lp-btn" href={DESKTOP_DOWNLOAD_URL}>
+              <Download size={18} />
+              Baixar desktop
             </a>
           </div>
-
-          <div className="landing-notes">
-            <span>API no Render</span>
-            <span>Postgres Neon</span>
-            <span>Migrations SQL</span>
-          </div>
-        </div>
-
-        <div className="landing-preview" aria-label="Preview do SorDChat">
-          <div className="landing-preview__top">
-            <span />
-            <span />
-            <span />
-          </div>
-          <div className="landing-preview__body">
-            <aside>
-              <strong>SorDChat</strong>
-              <small>Online</small>
-              <p className="active">Dashboard</p>
-              <p>Chat</p>
-              <p>Tasks</p>
-              <p>Arquivos</p>
-            </aside>
-            <section>
-              <div className="preview-header">
-                <h2>Dashboard</h2>
-                <span>Sincronizado</span>
-              </div>
-              <div className="preview-grid">
-                <article>
-                  <MessageSquare size={19} />
-                  <strong>25</strong>
-                  <small>Mensagens</small>
-                </article>
-                <article>
-                  <LayoutDashboard size={19} />
-                  <strong>8</strong>
-                  <small>Tasks</small>
-                </article>
-                <article>
-                  <LockKeyhole size={19} />
-                  <strong>3</strong>
-                  <small>Perfis</small>
-                </article>
-              </div>
-              <div className="preview-panel">
-                <span />
-                <span />
-                <span />
-              </div>
-            </section>
-          </div>
         </div>
       </section>
 
-      <section className="landing-strip">
-        <article>
-          <MessageSquare size={22} />
-          <h2>Chat em tempo real</h2>
-          <p>WebSocket na API para conversas internas e mensagens diretas.</p>
-        </article>
-        <article>
-          <ServerCog size={22} />
-          <h2>Deploy controlado</h2>
-          <p>Render com health check, env vars e migrations diretas no Neon.</p>
-        </article>
-        <article>
-          <MonitorDown size={22} />
-          <h2>Desktop app</h2>
-          <p>Wrapper Electron preparado para gerar instalador e publicar download.</p>
-        </article>
-      </section>
+      <footer className="lp-footer">
+        <div className="lp-container">
+          <BrandLogo subtitle="" />
+          <span>2026 SorDChat. Chat interno empresarial inteligente.</span>
+          <span className="lp-footer-check"><CheckCircle2 size={15} /> Render + Neon</span>
+        </div>
+      </footer>
     </main>
   );
 };

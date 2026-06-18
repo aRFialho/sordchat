@@ -18,6 +18,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { CalendarDays, GripVertical, Plus, Search, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE_URL } from '../config';
 
 const initialColumns = [
   {
@@ -96,6 +97,40 @@ const priorityMeta = {
   high: ['Alta', 'badge--danger'],
   medium: ['Media', 'badge--warning'],
   low: ['Baixa', 'badge--success'],
+};
+
+const requestJson = async (endpoint, options = {}) => {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${localStorage.getItem('token')}`,
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Nao foi possivel sincronizar tarefas.');
+  }
+
+  return response.status === 204 ? null : response.json();
+};
+
+const normalizeTask = (task) => ({
+  ...task,
+  id: String(task.id),
+  apiId: task.id,
+  dueDate: task.due_date || task.dueDate || '',
+});
+
+const buildColumnsFromTasks = (tasks) => {
+  const nextColumns = initialColumns.map((column) => ({ ...column, tasks: [] }));
+  tasks.map(normalizeTask).forEach((task) => {
+    const column = nextColumns.find((item) => item.id === task.status) || nextColumns[0];
+    column.tasks.push(task);
+  });
+  return nextColumns;
 };
 
 const loadStoredColumns = () => {
@@ -177,6 +212,7 @@ const SortableTask = ({ task, onDelete }) => {
 const Kanban = () => {
   const { user } = useAuth();
   const [columns, setColumns] = useState(loadStoredColumns);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
@@ -191,6 +227,22 @@ const Kanban = () => {
   );
 
   const totalTasks = columns.reduce((total, column) => total + column.tasks.length, 0);
+
+  const loadTasks = async () => {
+    setLoading(true);
+    try {
+      const tasks = await requestJson('/tasks/');
+      setColumns(buildColumnsFromTasks(tasks));
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTasks();
+  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(columns));
@@ -207,14 +259,22 @@ const Kanban = () => {
       tasks: column.tasks.filter(
         (task) =>
           task.title.toLowerCase().includes(term) ||
-          task.description.toLowerCase().includes(term) ||
-          task.category.toLowerCase().includes(term)
+          String(task.description || '').toLowerCase().includes(term) ||
+          String(task.category || '').toLowerCase().includes(term)
       ),
     }));
   }, [columns, searchTerm]);
 
   const handleDragEnd = ({ active, over }) => {
     if (!over || active.id === over.id) {
+      return;
+    }
+
+    const previousSourceColumn = findColumnByTask(columns, active.id);
+    const previousDestinationColumn =
+      columns.find((column) => column.id === over.id) || findColumnByTask(columns, over.id);
+
+    if (!previousSourceColumn || !previousDestinationColumn) {
       return;
     }
 
@@ -260,9 +320,19 @@ const Kanban = () => {
         return column;
       });
     });
+
+    if (previousSourceColumn.id !== previousDestinationColumn.id) {
+      requestJson(`/tasks/${active.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: previousDestinationColumn.id }),
+      }).catch((error) => {
+        toast.error(error.message);
+        loadTasks();
+      });
+    }
   };
 
-  const handleAddTask = (event) => {
+  const handleAddTask = async (event) => {
     event.preventDefault();
 
     if (!newTaskTitle.trim()) {
@@ -270,37 +340,53 @@ const Kanban = () => {
       return;
     }
 
-    const task = {
-      id: `task-${Date.now()}`,
-      title: newTaskTitle.trim(),
-      description:
-        newTaskDescription.trim() ||
-        `Criada por ${user?.full_name || user?.username || 'usuario'} no quadro operacional.`,
-      priority: newTaskPriority,
-      category: newTaskCategory.trim() || 'Operacao',
-      dueDate: newTaskDueDate,
-    };
+    try {
+      const createdTask = await requestJson('/tasks/', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: newTaskTitle.trim(),
+          description:
+            newTaskDescription.trim() ||
+            `Criada por ${user?.full_name || user?.username || 'usuario'} no quadro operacional.`,
+          priority: newTaskPriority,
+          category: newTaskCategory.trim() || 'Operacao',
+          due_date: newTaskDueDate,
+          status: targetColumn,
+        }),
+      });
+      const task = normalizeTask(createdTask);
 
-    setColumns((currentColumns) =>
-      currentColumns.map((column) =>
-        column.id === targetColumn ? { ...column, tasks: [task, ...column.tasks] } : column
-      )
-    );
-    setNewTaskTitle('');
-    setNewTaskDescription('');
-    setNewTaskPriority('medium');
-    setNewTaskCategory('Operacao');
-    setNewTaskDueDate('');
-    toast.success('Tarefa adicionada.');
+      setColumns((currentColumns) =>
+        currentColumns.map((column) =>
+          column.id === targetColumn ? { ...column, tasks: [task, ...column.tasks] } : column
+        )
+      );
+      setNewTaskTitle('');
+      setNewTaskDescription('');
+      setNewTaskPriority('medium');
+      setNewTaskCategory('Operacao');
+      setNewTaskDueDate('');
+      toast.success('Tarefa adicionada.');
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
 
-  const handleDeleteTask = (taskId) => {
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await requestJson(`/tasks/${taskId}`, { method: 'DELETE' });
+    } catch (error) {
+      toast.error(error.message);
+      return;
+    }
+
     setColumns((currentColumns) =>
       currentColumns.map((column) => ({
         ...column,
         tasks: column.tasks.filter((task) => task.id !== taskId),
       }))
     );
+    toast.success('Tarefa removida.');
   };
 
   return (
@@ -312,6 +398,7 @@ const Kanban = () => {
             <h2 className="m-0 mt-3 text-2xl font-extrabold text-slate-950">Quadro de tarefas</h2>
             <p className="m-0 mt-1 text-sm text-slate-500">
               Arraste tarefas entre colunas para organizar prioridades, execucao e revisoes do time.
+              {loading ? ' Sincronizando com a API...' : ''}
             </p>
           </div>
 
