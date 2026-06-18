@@ -54,13 +54,14 @@
     "directories": {
       "output": "dist-desktop"
     },
-    "icon": "electron/assets/icon",
+    "icon": "electron/assets/icon.ico",
     "files": [
       "build/**/*",
       "electron/**/*",
       "package.json"
     ],
     "win": {
+      "icon": "electron/assets/icon.ico",
       "target": [
         "nsis"
       ],

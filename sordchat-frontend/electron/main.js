@@ -1,7 +1,13 @@
 const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
+const { pathToFileURL } = require('url');
 
 const isDev = process.env.ELECTRON_START_URL;
+const appIcon = path.join(__dirname, 'assets', 'icon.ico');
+
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.sordchat.app');
+}
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -11,6 +17,7 @@ function createWindow() {
     minHeight: 680,
     backgroundColor: '#f6f7f9',
     title: 'SorDChat',
+    icon: appIcon,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -19,9 +26,14 @@ function createWindow() {
   });
 
   if (isDev) {
-    mainWindow.loadURL(process.env.ELECTRON_START_URL);
+    const startUrl = new URL(process.env.ELECTRON_START_URL);
+    if (!startUrl.hash) {
+      startUrl.hash = '/login';
+    }
+    mainWindow.loadURL(startUrl.toString());
   } else {
-    mainWindow.loadFile(path.join(__dirname, '..', 'build', 'index.html'));
+    const indexPath = path.join(__dirname, '..', 'build', 'index.html');
+    mainWindow.loadURL(`${pathToFileURL(indexPath).toString()}#/login`);
   }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {

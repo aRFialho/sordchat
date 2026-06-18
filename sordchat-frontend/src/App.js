@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WebSocketProvider } from './contexts/WebSocketContext';
 import Layout from './components/layout/Layout';
@@ -63,6 +63,8 @@ const ProtectedApp = () => (
 );
 
 function App() {
+  const Router = window.location.protocol === 'file:' ? HashRouter : BrowserRouter;
+
   return (
     <AuthProvider>
       <Router>
