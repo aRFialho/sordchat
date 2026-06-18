@@ -61,7 +61,7 @@ Variaveis para configurar no Render:
 - `FRONTEND_ORIGINS`: URL publica do static site, por exemplo `https://sordchat-web.onrender.com`.
 - `REACT_APP_API_URL`: URL publica da API, por exemplo `https://sordchat-api.onrender.com`.
 - `REACT_APP_WS_URL`: URL WebSocket da API, por exemplo `wss://sordchat-api.onrender.com`.
-- `REACT_APP_DESKTOP_DOWNLOAD_URL`: URL do instalador desktop publicado.
+- `REACT_APP_DESKTOP_DOWNLOAD_URL`: URL do instalador desktop publicado. Padrao de producao: `https://sordchat-api.onrender.com/downloads/desktop/latest`.
 
 ## Desktop
 
@@ -79,7 +79,16 @@ cd sordchat-frontend
 npm run desktop:dist
 ```
 
-O instalador sai em `sordchat-frontend/dist-desktop`. Publique o arquivo gerado como `SorDChat-Desktop.exe` no static site ou use uma URL externa em `REACT_APP_DESKTOP_DOWNLOAD_URL`.
+O instalador sai em `sordchat-frontend/dist-desktop`.
+
+Publicar o instalador no Neon para download pela propria API:
+
+```powershell
+cd backend
+python scripts/publish_desktop_release.py ..\sordchat-frontend\dist-desktop\SorDChat-Setup-0.1.0.exe
+```
+
+Depois de publicado, a landing usa `REACT_APP_DESKTOP_DOWNLOAD_URL=https://sordchat-api.onrender.com/downloads/desktop/latest`.
 
 ## Observacoes
 

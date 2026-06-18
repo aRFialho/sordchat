@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from io import BytesIO
 from pathlib import Path
 from typing import Dict, Optional
 import json
@@ -7,11 +8,11 @@ import uuid
 
 from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, create_engine, or_
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, LargeBinary, String, Text, create_engine, or_
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 import uvicorn
@@ -146,6 +147,21 @@ class FileUpload(Base):
     upload_date = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     uploader = relationship("User", back_populates="uploaded_files")
+
+
+class DesktopRelease(Base):
+    __tablename__ = "desktop_releases"
+
+    id = Column(Integer, primary_key=True, index=True)
+    version = Column(String(80), nullable=False, index=True)
+    platform = Column(String(40), default="windows", nullable=False, index=True)
+    filename = Column(String(255), nullable=False)
+    content_type = Column(String(120), default="application/octet-stream", nullable=False)
+    file_size = Column(BigInteger, nullable=False)
+    sha256 = Column(String(64), nullable=False)
+    binary_data = Column(LargeBinary, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 if DATABASE_URL.startswith("sqlite"):
@@ -526,6 +542,55 @@ async def version_check():
         "commit": os.getenv("RENDER_GIT_COMMIT") or APP_VERSION,
         "build_time": APP_BUILD_TIME,
     }
+
+
+@app.get("/downloads/desktop/latest/meta")
+async def latest_desktop_release_meta():
+    with SessionLocal() as db:
+        release = (
+            db.query(DesktopRelease)
+            .filter(DesktopRelease.platform == "windows", DesktopRelease.is_active == True)
+            .order_by(DesktopRelease.created_at.desc())
+            .first()
+        )
+        if not release:
+            raise HTTPException(status_code=404, detail="Instalador desktop ainda nao publicado")
+
+        return {
+            "version": release.version,
+            "platform": release.platform,
+            "filename": release.filename,
+            "content_type": release.content_type,
+            "file_size": release.file_size,
+            "sha256": release.sha256,
+            "created_at": release.created_at.isoformat() if release.created_at else None,
+            "download_url": "/downloads/desktop/latest",
+        }
+
+
+@app.get("/downloads/desktop/latest")
+async def download_latest_desktop_release():
+    with SessionLocal() as db:
+        release = (
+            db.query(DesktopRelease)
+            .filter(DesktopRelease.platform == "windows", DesktopRelease.is_active == True)
+            .order_by(DesktopRelease.created_at.desc())
+            .first()
+        )
+        if not release:
+            raise HTTPException(status_code=404, detail="Instalador desktop ainda nao publicado")
+
+        payload = bytes(release.binary_data)
+        filename = release.filename
+        headers = {
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(release.file_size),
+            "Cache-Control": "no-store",
+            "X-SorDChat-Version": release.version,
+            "X-SorDChat-Sha256": release.sha256,
+        }
+
+    return StreamingResponse(BytesIO(payload), media_type=release.content_type, headers=headers)
 
 
 @app.post("/auth/login")

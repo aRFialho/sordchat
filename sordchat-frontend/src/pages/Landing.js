@@ -11,8 +11,7 @@ import {
   ServerCog,
 } from 'lucide-react';
 import BrandLogo from '../components/common/BrandLogo';
-
-const downloadUrl = process.env.REACT_APP_DESKTOP_DOWNLOAD_URL || '/downloads/SorDChat-Desktop.exe';
+import { DESKTOP_DOWNLOAD_URL } from '../config';
 
 const Landing = () => {
   return (
@@ -23,7 +22,7 @@ const Landing = () => {
         </Link>
 
         <nav className="landing-actions" aria-label="Acoes principais">
-          <a className="button-secondary" href={downloadUrl}>
+          <a className="button-secondary" href={DESKTOP_DOWNLOAD_URL}>
             <Download size={17} />
             Baixar app
           </a>
@@ -51,7 +50,7 @@ const Landing = () => {
               Entrar pelo navegador
               <ArrowRight size={18} />
             </Link>
-            <a className="button-secondary" href={downloadUrl}>
+            <a className="button-secondary" href={DESKTOP_DOWNLOAD_URL}>
               <MonitorDown size={18} />
               Download desktop
             </a>
