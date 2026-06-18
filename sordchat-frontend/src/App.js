@@ -16,6 +16,7 @@ import AdminPanel from './pages/AdminPanel';
 import CoordinatorPanel from './pages/CoordinatorPanel';
 import Loading from './components/common/Loading';
 import Toast from './components/common/Toast';
+import VersionUpdatePrompt from './components/common/VersionUpdatePrompt';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -62,6 +63,7 @@ function App() {
     <AuthProvider>
       <Router>
         <Toast />
+        <VersionUpdatePrompt />
         <Routes>
           <Route
             path="/"

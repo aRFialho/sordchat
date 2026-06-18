@@ -1,0 +1,7 @@
+{
+  "service": "web",
+  "app": "SorDChat",
+  "version": "0.1.0",
+  "commit": "local",
+  "build_time": null
+}

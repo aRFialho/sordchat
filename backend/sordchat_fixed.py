@@ -21,6 +21,8 @@ SECRET_KEY = os.getenv("SECRET_KEY", "sordchat_secret_key_super_secure_2024")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 IS_PRODUCTION = os.getenv("ENVIRONMENT", "development").lower() == "production"
+APP_VERSION = os.getenv("APP_VERSION") or os.getenv("RENDER_GIT_COMMIT") or "local"
+APP_BUILD_TIME = os.getenv("APP_BUILD_TIME")
 DEFAULT_FRONTEND_ORIGINS = [
     "https://sordchat-web.onrender.com",
 ]
@@ -513,6 +515,17 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "database": "postgres" if "postgresql" in DATABASE_URL else "sqlite"}
+
+
+@app.get("/version")
+async def version_check():
+    return {
+        "service": "api",
+        "app": "SorDChat",
+        "version": APP_VERSION,
+        "commit": os.getenv("RENDER_GIT_COMMIT") or APP_VERSION,
+        "build_time": APP_BUILD_TIME,
+    }
 
 
 @app.post("/auth/login")

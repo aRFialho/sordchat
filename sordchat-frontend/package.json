@@ -34,6 +34,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "prebuild": "node scripts/write-version.js",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "desktop:start": "electron .",
