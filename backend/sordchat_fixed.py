@@ -27,6 +27,21 @@ DEFAULT_FRONTEND_ORIGINS = [
 DEFAULT_DEPARTMENTS = ["TI", "Suporte", "Comercial", "Financeiro", "Operacao", "Produto"]
 USER_LEVELS = {"usuario", "coordenador", "master", "padrao"}
 COORDINATOR_LEVELS = {"coordenador", "master"}
+ALLOWED_UPLOAD_EXTENSIONS = {
+    ".csv",
+    ".doc",
+    ".docx",
+    ".gif",
+    ".jpeg",
+    ".jpg",
+    ".pdf",
+    ".png",
+    ".txt",
+    ".webp",
+    ".xls",
+    ".xlsx",
+    ".zip",
+}
 
 
 def normalize_database_url(database_url: str) -> str:
@@ -83,9 +98,22 @@ class Ticket(Base):
     channel = Column(String(80), default="Web", nullable=False)
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    attachment_file_id = Column(Integer, ForeignKey("file_uploads.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, nullable=True)
     closed_at = Column(DateTime, nullable=True)
+
+
+class ChatGroup(Base):
+    __tablename__ = "chat_groups"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(120), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    department = Column(String(100), nullable=True, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class Message(Base):
@@ -219,6 +247,7 @@ def serialize_user(user: User) -> dict:
 def serialize_ticket(ticket: Ticket, db) -> dict:
     created_by = db.query(User).filter(User.id == ticket.created_by_id).first()
     assigned_to = db.query(User).filter(User.id == ticket.assigned_to_id).first() if ticket.assigned_to_id else None
+    attachment = db.query(FileUpload).filter(FileUpload.id == ticket.attachment_file_id).first() if ticket.attachment_file_id else None
     return {
         "id": ticket.id,
         "title": ticket.title,
@@ -231,6 +260,10 @@ def serialize_ticket(ticket: Ticket, db) -> dict:
         "created_by_name": created_by.full_name if created_by else None,
         "assigned_to_id": ticket.assigned_to_id,
         "assigned_to_name": assigned_to.full_name if assigned_to else None,
+        "attachment_file_id": ticket.attachment_file_id,
+        "attachment_filename": attachment.filename if attachment else None,
+        "attachment_content_type": attachment.content_type if attachment else None,
+        "attachment_file_size": attachment.file_size if attachment else None,
         "created_at": ticket.created_at.isoformat() if ticket.created_at else None,
         "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else None,
         "closed_at": ticket.closed_at.isoformat() if ticket.closed_at else None,
@@ -252,6 +285,20 @@ def serialize_message(message: Message, db) -> dict:
         "message_type": message.message_type,
         "timestamp": message.timestamp.isoformat() if message.timestamp else None,
         "file_path": message.file_path,
+    }
+
+
+def serialize_group(group: ChatGroup, db) -> dict:
+    creator = db.query(User).filter(User.id == group.created_by_id).first()
+    return {
+        "id": group.id,
+        "name": group.name,
+        "description": group.description,
+        "department": group.department,
+        "created_by_id": group.created_by_id,
+        "created_by_name": creator.full_name if creator else None,
+        "is_active": group.is_active,
+        "created_at": group.created_at.isoformat() if group.created_at else None,
     }
 
 
@@ -643,6 +690,7 @@ async def create_ticket(payload: dict, current_user: User = Depends(get_current_
         raise HTTPException(status_code=403, detail="Coordenador so pode criar tickets do proprio setor.")
 
     assigned_to_id = payload.get("assigned_to_id")
+    attachment_file_id = payload.get("attachment_file_id")
     with SessionLocal() as db:
         if assigned_to_id:
             assigned_user = db.query(User).filter(User.id == int(assigned_to_id), User.is_active == True).first()
@@ -650,6 +698,10 @@ async def create_ticket(payload: dict, current_user: User = Depends(get_current_
                 raise HTTPException(status_code=400, detail="Usuario responsavel nao encontrado.")
             if is_coordinator(current_user) and not is_admin(current_user) and assigned_user.department != current_user.department:
                 raise HTTPException(status_code=403, detail="Responsavel precisa estar no mesmo setor.")
+        if attachment_file_id:
+            attachment = db.query(FileUpload).filter(FileUpload.id == int(attachment_file_id)).first()
+            if not attachment:
+                raise HTTPException(status_code=400, detail="Anexo nao encontrado.")
 
         ticket = Ticket(
             title=title,
@@ -660,6 +712,7 @@ async def create_ticket(payload: dict, current_user: User = Depends(get_current_
             channel=str(payload.get("channel") or "Web"),
             created_by_id=current_user.id,
             assigned_to_id=int(assigned_to_id) if assigned_to_id else None,
+            attachment_file_id=int(attachment_file_id) if attachment_file_id else None,
         )
         db.add(ticket)
         db.commit()
@@ -697,6 +750,16 @@ async def update_ticket(ticket_id: int, payload: dict, current_user: User = Depe
                 ticket.assigned_to_id = assigned_user.id
             else:
                 ticket.assigned_to_id = None
+
+        if "attachment_file_id" in payload:
+            attachment_file_id = payload.get("attachment_file_id")
+            if attachment_file_id:
+                attachment = db.query(FileUpload).filter(FileUpload.id == int(attachment_file_id)).first()
+                if not attachment:
+                    raise HTTPException(status_code=400, detail="Anexo nao encontrado.")
+                ticket.attachment_file_id = attachment.id
+            else:
+                ticket.attachment_file_id = None
 
         if ticket.status == "Resolvido":
             ticket.closed_at = ticket.closed_at or datetime.utcnow()
@@ -773,6 +836,43 @@ async def coordinator_overview(current_user: User = Depends(get_current_user)):
         }
 
 
+@app.get("/groups/")
+async def list_groups(current_user: User = Depends(get_current_user)):
+    with SessionLocal() as db:
+        query = db.query(ChatGroup).filter(ChatGroup.is_active == True)
+        if not is_admin(current_user):
+            if current_user.department:
+                query = query.filter(ChatGroup.department == current_user.department)
+            else:
+                query = query.filter(ChatGroup.created_by_id == current_user.id)
+        groups = query.order_by(ChatGroup.name.asc()).all()
+        return [serialize_group(group, db) for group in groups]
+
+
+@app.post("/groups/")
+async def create_group(payload: dict, current_user: User = Depends(get_current_user)):
+    ensure_coordinator(current_user)
+    name = str(payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Nome do grupo e obrigatorio.")
+
+    department = str(payload.get("department") or current_user.department or "Geral").strip()
+    if is_coordinator(current_user) and not is_admin(current_user) and department != current_user.department:
+        raise HTTPException(status_code=403, detail="Coordenador so pode criar grupos do proprio setor.")
+
+    with SessionLocal() as db:
+        group = ChatGroup(
+            name=name,
+            description=str(payload.get("description") or "").strip() or None,
+            department=department,
+            created_by_id=current_user.id,
+        )
+        db.add(group)
+        db.commit()
+        db.refresh(group)
+        return serialize_group(group, db)
+
+
 @app.websocket("/messages/ws/{token}")
 async def websocket_endpoint(websocket: WebSocket, token: str):
     user_data = None
@@ -832,6 +932,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                         "type": "new_message",
                         "message": {
                             "id": new_message.id,
+                            "client_id": message_data.get("client_id"),
                             "content": new_message.content,
                             "sender_id": user_data["id"],
                             "sender_name": user_data["full_name"],
@@ -875,10 +976,10 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
 
 @app.post("/files/upload")
 async def upload_file(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
-    blocked_extensions = {".exe", ".bat", ".cmd", ".com", ".msi", ".ps1", ".sh", ".scr", ".vbs", ".js"}
     file_extension = Path(file.filename or "").suffix.lower()
-    if file_extension in blocked_extensions:
-        raise HTTPException(status_code=400, detail="Este tipo de arquivo nao pode ser enviado por seguranca.")
+    if file_extension not in ALLOWED_UPLOAD_EXTENSIONS:
+        allowed = ", ".join(sorted(ALLOWED_UPLOAD_EXTENSIONS))
+        raise HTTPException(status_code=400, detail=f"Formato nao permitido. Envie apenas: {allowed}.")
 
     content = await file.read()
     if len(content) > 10 * 1024 * 1024:

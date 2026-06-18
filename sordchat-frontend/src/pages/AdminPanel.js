@@ -51,20 +51,25 @@ const requestJson = async (path, options = {}) => {
 const AdminPanel = () => {
   const [overview, setOverview] = useState(null);
   const [departments, setDepartments] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [newUser, setNewUser] = useState(initialUser);
+  const [newGroup, setNewGroup] = useState({ name: '', description: '', department: 'TI' });
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [overviewData, departmentData] = await Promise.all([
+      const [overviewData, departmentData, groupData] = await Promise.all([
         requestJson('/admin/overview'),
         requestJson('/departments/'),
+        requestJson('/groups/'),
       ]);
       setOverview(overviewData);
       setDepartments(departmentData);
+      setGroups(groupData);
       setNewUser((prev) => ({ ...prev, department: departmentData[0] || prev.department }));
+      setNewGroup((prev) => ({ ...prev, department: departmentData[0] || prev.department }));
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -110,6 +115,21 @@ const AdminPanel = () => {
         body: JSON.stringify({ status }),
       });
       toast.success('Ticket atualizado.');
+      await loadData();
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleCreateGroup = async (event) => {
+    event.preventDefault();
+    try {
+      await requestJson('/groups/', {
+        method: 'POST',
+        body: JSON.stringify(newGroup),
+      });
+      toast.success('Grupo criado.');
+      setNewGroup({ name: '', description: '', department: departments[0] || 'TI' });
       await loadData();
     } catch (error) {
       toast.error(error.message);
@@ -225,6 +245,44 @@ const AdminPanel = () => {
               <span className="badge" key={department}>
                 {department}
               </span>
+            ))}
+          </div>
+
+          <form className="mt-5 grid gap-2" onSubmit={handleCreateGroup}>
+            <input
+              className="input"
+              value={newGroup.name}
+              onChange={(event) => setNewGroup((prev) => ({ ...prev, name: event.target.value }))}
+              placeholder="Novo grupo"
+            />
+            <input
+              className="input"
+              value={newGroup.description}
+              onChange={(event) => setNewGroup((prev) => ({ ...prev, description: event.target.value }))}
+              placeholder="Descricao do grupo"
+            />
+            <select
+              className="select"
+              value={newGroup.department}
+              onChange={(event) => setNewGroup((prev) => ({ ...prev, department: event.target.value }))}
+            >
+              {departments.map((department) => (
+                <option key={department} value={department}>
+                  {department}
+                </option>
+              ))}
+            </select>
+            <button className="button-primary" type="submit">
+              Criar grupo
+            </button>
+          </form>
+
+          <div className="mt-5 grid gap-2">
+            {groups.map((group) => (
+              <div className="rounded-lg border border-slate-200 bg-white p-3" key={group.id}>
+                <p className="m-0 font-extrabold text-slate-950">{group.name}</p>
+                <p className="m-0 text-sm text-slate-500">{group.department || 'Sem setor'}</p>
+              </div>
             ))}
           </div>
         </article>

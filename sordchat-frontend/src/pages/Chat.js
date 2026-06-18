@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { API_BASE_URL } from '../config';
+import { ACCEPTED_UPLOAD_TYPES } from '../constants/uploads';
 
 const emojiGroups = [
   {
@@ -335,7 +336,11 @@ const Chat = () => {
 
               return (
                 <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`message-card max-w-[min(680px,82%)] p-3 ${isOwn ? 'bg-teal-700 text-white' : ''}`}>
+                  <div
+                    className={`message-card max-w-[min(680px,82%)] p-3 ${
+                      isOwn ? 'border-teal-700 bg-teal-700 text-white' : 'bg-white text-slate-900'
+                    }`}
+                  >
                     {!isOwn && !selectedUser && (
                       <p className="m-0 mb-1 text-xs font-extrabold opacity-70">{message.sender_name}</p>
                     )}
@@ -361,7 +366,9 @@ const Chat = () => {
                         </div>
                       </div>
                     ) : (
-                      <p className="m-0 whitespace-pre-wrap text-sm">{message.content}</p>
+                      <p className={`m-0 whitespace-pre-wrap text-sm ${isOwn ? 'text-white' : 'text-slate-900'}`}>
+                        {message.content}
+                      </p>
                     )}
 
                     <p className={`m-0 mt-2 text-[11px] ${isOwn ? 'text-teal-50' : 'text-slate-500'}`}>
@@ -421,7 +428,13 @@ const Chat = () => {
               <SmilePlus size={18} />
             </button>
 
-            <input ref={fileInputRef} className="hidden" type="file" onChange={handleFileUpload} />
+            <input
+              ref={fileInputRef}
+              accept={ACCEPTED_UPLOAD_TYPES}
+              className="hidden"
+              type="file"
+              onChange={handleFileUpload}
+            />
             <button
               className="icon-button icon-button--light"
               type="button"

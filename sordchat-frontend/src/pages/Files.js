@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Download, FileArchive, FileText, Image as ImageIcon, Paperclip, RefreshCw, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../config';
+import { ACCEPTED_UPLOAD_TYPES } from '../constants/uploads';
 
 const formatBytes = (bytes = 0) => {
   if (!bytes) return '0 B';
@@ -100,7 +101,7 @@ const Files = () => {
               <RefreshCw size={17} />
               Atualizar
             </button>
-            <input ref={fileInputRef} className="hidden" type="file" onChange={handleUpload} />
+            <input ref={fileInputRef} accept={ACCEPTED_UPLOAD_TYPES} className="hidden" type="file" onChange={handleUpload} />
             <button className="button-primary" type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
               {uploading ? <span className="spinner h-4 w-4" /> : <Upload size={17} />}
               Enviar arquivo

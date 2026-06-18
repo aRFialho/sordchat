@@ -39,7 +39,20 @@ export const WebSocketProvider = ({ children }) => {
         break;
 
       case 'new_message':
-        setMessages(prev => [...prev, data.message]);
+        setMessages(prev => {
+          if (data.message.client_id) {
+            const optimisticIndex = prev.findIndex(msg => msg.client_id === data.message.client_id);
+            if (optimisticIndex >= 0) {
+              return prev.map((msg, index) => (index === optimisticIndex ? { ...data.message, pending: false } : msg));
+            }
+          }
+
+          if (prev.some(msg => msg.id === data.message.id)) {
+            return prev;
+          }
+
+          return [...prev, data.message];
+        });
 
         // Incrementar contador de não lidas se não for do usuário atual
         if (data.message.sender_id !== user?.id) {
@@ -221,8 +234,11 @@ export const WebSocketProvider = ({ children }) => {
       return;
     }
 
+    const clientId =
+      typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`;
     const messageData = {
       type: 'chat_message',
+      client_id: clientId,
       content,
       receiver_id: receiverId,
       message_type: messageType,
@@ -230,12 +246,30 @@ export const WebSocketProvider = ({ children }) => {
     };
 
     try {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: clientId,
+          client_id: clientId,
+          content,
+          sender_id: user?.id,
+          sender_name: user?.full_name || user?.username || 'Voce',
+          receiver_id: receiverId,
+          message_type: messageType,
+          timestamp: new Date().toISOString(),
+          file_path: filePath,
+          pending: true,
+        },
+      ]);
       socketRef.current.send(JSON.stringify(messageData));
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
+      setMessages(prev =>
+        prev.map(msg => (msg.client_id === clientId ? { ...msg, pending: false, failed: true } : msg))
+      );
       toast.error('Erro ao enviar mensagem');
     }
-  }, []);
+  }, [user]);
 
   // Enviar indicador de digitação
   const sendTypingIndicator = useCallback((isTyping, receiverId = null) => {
