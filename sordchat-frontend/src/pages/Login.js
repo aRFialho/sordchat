@@ -66,12 +66,12 @@ const Login = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <label className="block">
               <span className="mb-2 block text-sm font-bold text-slate-700">Usuario</span>
-              <div className="relative">
-                <UserRound className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <div className="login-field">
+                <UserRound className="login-field__icon" size={18} />
                 <input
                   name="username"
                   type="text"
-                  className="input pl-10"
+                  className="input login-field__input"
                   value={credentials.username}
                   onChange={(event) => setCredentials((prev) => ({ ...prev, username: event.target.value }))}
                   autoComplete="username"
@@ -82,12 +82,12 @@ const Login = () => {
 
             <label className="block">
               <span className="mb-2 block text-sm font-bold text-slate-700">Senha</span>
-              <div className="relative">
-                <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <div className="login-field">
+                <Lock className="login-field__icon" size={18} />
                 <input
                   name="password"
                   type="password"
-                  className="input pl-10"
+                  className="input login-field__input"
                   value={credentials.password}
                   onChange={(event) => setCredentials((prev) => ({ ...prev, password: event.target.value }))}
                   autoComplete="current-password"

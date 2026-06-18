@@ -12,7 +12,6 @@ import Tickets from './pages/Tickets';
 import Files from './pages/Files';
 import Users from './pages/Users';
 import Birthdays from './pages/Birthdays';
-import Assistant from './pages/Assistant';
 import Notifications from './pages/Notifications';
 import AdminPanel from './pages/AdminPanel';
 import CoordinatorPanel from './pages/CoordinatorPanel';
@@ -53,7 +52,7 @@ const ProtectedApp = () => (
         <Route path="/files" element={<Files />} />
         <Route path="/users" element={<Users />} />
         <Route path="/birthdays" element={<Birthdays />} />
-        <Route path="/assistant" element={<Assistant />} />
+        <Route path="/assistant" element={<Navigate to="/dashboard" replace />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/coordinator" element={<CoordinatorPanel />} />
         <Route path="/notifications" element={<Notifications />} />

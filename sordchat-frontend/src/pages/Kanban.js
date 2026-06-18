@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  closestCenter,
+  closestCorners,
   DndContext,
+  DragOverlay,
   KeyboardSensor,
   PointerSensor,
+  useDroppable,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -150,36 +152,13 @@ const loadStoredColumns = () => {
 const findColumnByTask = (columns, taskId) =>
   columns.find((column) => column.tasks.some((task) => task.id === taskId));
 
-const SortableTask = ({ task, onDelete }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: task.id,
-    data: { type: 'task', task },
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
+const TaskCardContent = ({ task, onDelete, dragHandle }) => {
   const [priorityLabel, priorityClass] = priorityMeta[task.priority] || priorityMeta.medium;
 
   return (
-    <article
-      ref={setNodeRef}
-      style={style}
-      className={`task-card p-4 ${isDragging ? 'shadow-xl opacity-80' : ''}`}
-    >
+    <>
       <div className="mb-3 flex items-start gap-2">
-        <button
-          className="mt-0.5 text-slate-400 hover:text-slate-700"
-          type="button"
-          title="Arrastar"
-          aria-label="Arrastar tarefa"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical size={17} />
-        </button>
+        {dragHandle}
         <div className="min-w-0 flex-1">
           <h4 className="m-0 text-sm font-extrabold text-slate-950">{task.title}</h4>
           <p className="m-0 mt-1 text-xs leading-5 text-slate-500">{task.description}</p>
@@ -205,7 +184,57 @@ const SortableTask = ({ task, onDelete }) => {
           </span>
         )}
       </div>
+    </>
+  );
+};
+
+const SortableTask = ({ task, onDelete }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+    data: { type: 'task', task },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <article
+      ref={setNodeRef}
+      style={style}
+      className={`task-card p-4 ${isDragging ? 'task-card--dragging' : ''}`}
+    >
+      <TaskCardContent
+        task={task}
+        onDelete={onDelete}
+        dragHandle={(
+          <button
+            className="mt-0.5 text-slate-400 hover:text-slate-700"
+            type="button"
+            title="Arrastar"
+            aria-label="Arrastar tarefa"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical size={17} />
+          </button>
+        )}
+      />
     </article>
+  );
+};
+
+const KanbanColumnDropzone = ({ column, children }) => {
+  const { isOver, setNodeRef } = useDroppable({
+    id: column.id,
+    data: { type: 'column', columnId: column.id },
+  });
+
+  return (
+    <div ref={setNodeRef} className={`task-dropzone grid flex-1 content-start gap-3 bg-slate-50 p-3 ${isOver ? 'task-dropzone--over' : ''}`}>
+      {children}
+    </div>
   );
 };
 
@@ -220,6 +249,7 @@ const Kanban = () => {
   const [newTaskCategory, setNewTaskCategory] = useState('Operacao');
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [targetColumn, setTargetColumn] = useState('backlog');
+  const [activeTask, setActiveTask] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -265,7 +295,13 @@ const Kanban = () => {
     }));
   }, [columns, searchTerm]);
 
+  const handleDragStart = ({ active }) => {
+    setActiveTask(active.data.current?.task || null);
+  };
+
   const handleDragEnd = ({ active, over }) => {
+    setActiveTask(null);
+
     if (!over || active.id === over.id) {
       return;
     }
@@ -466,7 +502,13 @@ const Kanban = () => {
         <span className="badge">{totalTasks} tarefas no quadro</span>
       </section>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragCancel={() => setActiveTask(null)}
+        onDragEnd={handleDragEnd}
+      >
         <section className="task-board">
           {visibleColumns.map((column) => (
             <div className="panel flex min-h-[480px] flex-col overflow-hidden" key={column.id}>
@@ -478,9 +520,9 @@ const Kanban = () => {
               </header>
 
               <SortableContext items={column.tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
-                <div className="grid flex-1 content-start gap-3 bg-slate-50 p-3">
+                <KanbanColumnDropzone column={column}>
                   {column.tasks.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-center text-sm text-slate-500">
+                    <div className="task-empty-drop rounded-lg border border-dashed border-slate-300 bg-white p-4 text-center text-sm text-slate-500">
                       Sem tarefas
                     </div>
                   ) : (
@@ -488,11 +530,22 @@ const Kanban = () => {
                       <SortableTask key={task.id} task={task} onDelete={handleDeleteTask} />
                     ))
                   )}
-                </div>
+                </KanbanColumnDropzone>
               </SortableContext>
             </div>
           ))}
         </section>
+        <DragOverlay>
+          {activeTask ? (
+            <article className="task-card task-card--overlay p-4">
+              <TaskCardContent
+                task={activeTask}
+                onDelete={() => {}}
+                dragHandle={<span className="mt-0.5 text-slate-400"><GripVertical size={17} /></span>}
+              />
+            </article>
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </div>
   );

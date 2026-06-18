@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from io import BytesIO
 from pathlib import Path
 from typing import Dict, Optional
 import json
@@ -102,6 +101,10 @@ class Ticket(Base):
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     attachment_file_id = Column(Integer, ForeignKey("file_uploads.id"), nullable=True)
+    rating_score = Column(Integer, nullable=True)
+    rating_comment = Column(Text, nullable=True)
+    rated_at = Column(DateTime, nullable=True)
+    first_response_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, nullable=True)
     closed_at = Column(DateTime, nullable=True)
@@ -151,6 +154,17 @@ class Message(Base):
     receiver = relationship("User", foreign_keys=[receiver_id], back_populates="received_messages")
 
 
+class TicketMessage(Base):
+    __tablename__ = "ticket_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ticket_id = Column(Integer, ForeignKey("tickets.id"), nullable=False, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    content = Column(Text, default="", nullable=False)
+    file_id = Column(Integer, ForeignKey("file_uploads.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class FileUpload(Base):
     __tablename__ = "file_uploads"
 
@@ -159,6 +173,7 @@ class FileUpload(Base):
     file_path = Column(String(500), nullable=False)
     file_size = Column(Integer, nullable=False)
     content_type = Column(String(120), nullable=False)
+    binary_data = Column(LargeBinary, nullable=True)
     uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     upload_date = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -175,9 +190,18 @@ class DesktopRelease(Base):
     content_type = Column(String(120), default="application/octet-stream", nullable=False)
     file_size = Column(BigInteger, nullable=False)
     sha256 = Column(String(64), nullable=False)
-    binary_data = Column(LargeBinary, nullable=False)
+    binary_data = Column(LargeBinary, nullable=True)
+    storage_mode = Column(String(40), default="inline", nullable=False)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class DesktopReleaseChunk(Base):
+    __tablename__ = "desktop_release_chunks"
+
+    release_id = Column(Integer, ForeignKey("desktop_releases.id", ondelete="CASCADE"), primary_key=True)
+    chunk_index = Column(Integer, primary_key=True)
+    data = Column(LargeBinary, nullable=False)
 
 
 if DATABASE_URL.startswith("sqlite"):
@@ -282,6 +306,10 @@ def serialize_ticket(ticket: Ticket, db) -> dict:
     created_by = db.query(User).filter(User.id == ticket.created_by_id).first()
     assigned_to = db.query(User).filter(User.id == ticket.assigned_to_id).first() if ticket.assigned_to_id else None
     attachment = db.query(FileUpload).filter(FileUpload.id == ticket.attachment_file_id).first() if ticket.attachment_file_id else None
+    first_response_minutes = None
+    if ticket.created_at and ticket.first_response_at:
+        first_response_minutes = max(0, int((ticket.first_response_at - ticket.created_at).total_seconds() // 60))
+
     return {
         "id": ticket.id,
         "title": ticket.title,
@@ -298,9 +326,31 @@ def serialize_ticket(ticket: Ticket, db) -> dict:
         "attachment_filename": attachment.filename if attachment else None,
         "attachment_content_type": attachment.content_type if attachment else None,
         "attachment_file_size": attachment.file_size if attachment else None,
+        "rating_score": ticket.rating_score,
+        "rating_comment": ticket.rating_comment,
+        "rated_at": ticket.rated_at.isoformat() if ticket.rated_at else None,
+        "first_response_at": ticket.first_response_at.isoformat() if ticket.first_response_at else None,
+        "first_response_minutes": first_response_minutes,
         "created_at": ticket.created_at.isoformat() if ticket.created_at else None,
         "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else None,
         "closed_at": ticket.closed_at.isoformat() if ticket.closed_at else None,
+    }
+
+
+def serialize_ticket_message(message: TicketMessage, db) -> dict:
+    sender = db.query(User).filter(User.id == message.sender_id).first()
+    attachment = db.query(FileUpload).filter(FileUpload.id == message.file_id).first() if message.file_id else None
+    return {
+        "id": message.id,
+        "ticket_id": message.ticket_id,
+        "sender_id": message.sender_id,
+        "sender_name": sender.full_name if sender else "Usuario",
+        "content": message.content,
+        "file_id": message.file_id,
+        "attachment_filename": attachment.filename if attachment else None,
+        "attachment_content_type": attachment.content_type if attachment else None,
+        "attachment_file_size": attachment.file_size if attachment else None,
+        "created_at": message.created_at.isoformat() if message.created_at else None,
     }
 
 
@@ -320,6 +370,38 @@ def serialize_message(message: Message, db) -> dict:
         "timestamp": message.timestamp.isoformat() if message.timestamp else None,
         "file_path": message.file_path,
     }
+
+
+def can_access_ticket(ticket: Ticket, user: User) -> bool:
+    if is_admin(user):
+        return True
+    if is_coordinator(user) and user.department and ticket.department == user.department:
+        return True
+    return ticket.created_by_id == user.id or ticket.assigned_to_id == user.id
+
+
+def ensure_ticket_access(ticket: Ticket, user: User):
+    if not can_access_ticket(ticket, user):
+        raise HTTPException(status_code=403, detail="Sem permissao para acessar este ticket.")
+
+
+async def notify_ticket_user(user_id: Optional[int], title: str, description: str, ticket_id: int):
+    if not user_id:
+        return
+    payload = {
+        "type": "notification",
+        "notification": {
+            "id": f"ticket-{ticket_id}-{int(datetime.utcnow().timestamp() * 1000)}",
+            "type": "Ticket",
+            "title": title,
+            "description": description,
+            "time": "Agora",
+            "unread": True,
+            "ticket_id": ticket_id,
+            "link": "/tickets",
+        },
+    }
+    await manager.send_personal_message(json.dumps(payload), user_id)
 
 
 def serialize_group(group: ChatGroup, db) -> dict:
@@ -622,28 +704,77 @@ def infer_assignee(text: str, users: list[User]) -> Optional[User]:
     return None
 
 
-def build_assistant_title(text: str, intent: str) -> str:
+def extract_assistant_subject(text: str, intent: str) -> str:
     clean = " ".join(text.strip().split())
     prefixes = [
         "crie um ticket",
+        "crie o ticket",
         "criar ticket",
         "abra um ticket",
+        "abra o ticket",
         "abrir ticket",
+        "registrar chamado",
+        "registre chamado",
         "crie uma tarefa",
+        "crie a tarefa",
         "criar tarefa",
         "adicione uma tarefa",
+        "adicionar tarefa",
         "registrar",
         "registre",
     ]
     normalized = normalize_text(clean)
-    title = clean
+    subject = clean
     for prefix in prefixes:
         if normalized.startswith(prefix):
-            title = clean[len(prefix):].strip(" :-")
+            subject = clean[len(prefix):].strip(" :-")
             break
-    if not title:
-        title = "Novo ticket" if intent == "ticket" else "Nova tarefa"
-    return title[:180]
+
+    lowered = normalize_text(subject)
+    if " sobre " in lowered:
+        index = lowered.find(" sobre ")
+        subject = subject[index + len(" sobre "):].strip(" :-")
+    elif ":" in subject:
+        subject = subject.split(":", 1)[1].strip()
+
+    cut_markers = [" e atribua", " atribua", " ate amanha", " até amanhã", " para amanha", " para amanhã"]
+    lowered = normalize_text(subject)
+    for marker in cut_markers:
+        index = lowered.find(normalize_text(marker))
+        if index > 8:
+            subject = subject[:index].strip(" .,;-")
+            lowered = normalize_text(subject)
+
+    filler = ["urgente", "alta prioridade", "prioridade alta", "por favor"]
+    words = [word for word in subject.split() if normalize_text(word) not in filler]
+    subject = " ".join(words).strip(" .,;-")
+    if not subject:
+        subject = "atendimento interno" if intent == "ticket" else "atividade operacional"
+    return subject[:160]
+
+
+def build_assistant_title(text: str, intent: str) -> str:
+    subject = extract_assistant_subject(text, intent)
+    words = subject.split()
+    short_subject = " ".join(words[:9]).strip()
+    if len(words) > 9:
+        short_subject = f"{short_subject}..."
+    prefix = "Ticket" if intent == "ticket" else "Tarefa"
+    return f"{prefix}: {short_subject}".strip()[:180]
+
+
+def build_assistant_scope(subject: str, intent: str, department: str, assignee: Optional[User], due_date: Optional[str]) -> str:
+    owner = assignee.full_name if assignee else "responsavel definido pelo setor"
+    due_text = f" Prazo identificado: {due_date}." if due_date else ""
+    if intent == "ticket":
+        return (
+            f"Escopo: analisar {subject}, identificar causa, registrar evidencias e conduzir o atendimento ate a "
+            f"resolucao ou proximo encaminhamento. Setor: {department}. Responsavel: {owner}.{due_text}"
+        )
+    return (
+        f"Escopo: executar {subject}, organizar as etapas necessarias, registrar andamento no Kanban e concluir com "
+        f"validacao do responsavel. Setor: {department}. Responsavel: {owner}.{due_text}"
+    )
 
 
 def plan_assistant_action(text: str, current_user: User, db) -> dict:
@@ -651,13 +782,15 @@ def plan_assistant_action(text: str, current_user: User, db) -> dict:
     intent = infer_intent(text)
     assignee = infer_assignee(text, users)
     department = infer_department(text, users, current_user.department)
-    title = build_assistant_title(text, intent)
     due_date = infer_due_date(text)
+    subject = extract_assistant_subject(text, intent)
+    title = build_assistant_title(subject, intent)
 
     return {
         "intent": intent,
         "title": title,
-        "description": text.strip(),
+        "description": build_assistant_scope(subject, intent, department, assignee, due_date),
+        "subject": subject,
         "department": department,
         "assigned_to_id": assignee.id if assignee else None,
         "assigned_to_name": assignee.full_name if assignee else None,
@@ -744,9 +877,28 @@ async def latest_desktop_release_meta():
             "content_type": release.content_type,
             "file_size": release.file_size,
             "sha256": release.sha256,
+            "storage_mode": release.storage_mode,
             "created_at": release.created_at.isoformat() if release.created_at else None,
             "download_url": "/downloads/desktop/latest",
         }
+
+
+def iter_desktop_release_chunks(release_id: int):
+    with SessionLocal() as db:
+        chunk_index = 0
+        while True:
+            chunk = (
+                db.query(DesktopReleaseChunk)
+                .filter(
+                    DesktopReleaseChunk.release_id == release_id,
+                    DesktopReleaseChunk.chunk_index == chunk_index,
+                )
+                .first()
+            )
+            if not chunk:
+                break
+            yield bytes(chunk.data)
+            chunk_index += 1
 
 
 @app.get("/downloads/desktop/latest")
@@ -761,17 +913,42 @@ async def download_latest_desktop_release():
         if not release:
             raise HTTPException(status_code=404, detail="Instalador desktop ainda nao publicado")
 
-        payload = bytes(release.binary_data)
-        filename = release.filename
+        release_id = release.id
+        storage_mode = release.storage_mode or "inline"
+        content_type = release.content_type
+        payload = bytes(release.binary_data or b"") if storage_mode == "inline" else None
+        chunk_count = 0
+        if storage_mode == "chunks":
+            try:
+                chunk_count = (
+                    db.query(DesktopReleaseChunk)
+                    .filter(DesktopReleaseChunk.release_id == release_id)
+                    .count()
+                )
+            except Exception as exc:
+                print(f"Erro ao consultar chunks do instalador: {exc}")
+                raise HTTPException(status_code=503, detail="Armazenamento do instalador ainda nao esta pronto.")
         headers = {
-            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Disposition": f'attachment; filename="{release.filename}"',
             "Content-Length": str(release.file_size),
             "Cache-Control": "no-store",
             "X-SorDChat-Version": release.version,
             "X-SorDChat-Sha256": release.sha256,
         }
 
-    return StreamingResponse(BytesIO(payload), media_type=release.content_type, headers=headers)
+    if storage_mode == "chunks":
+        if chunk_count == 0:
+            raise HTTPException(status_code=404, detail="Instalador desktop sem dados publicados")
+        return StreamingResponse(
+            iter_desktop_release_chunks(release_id),
+            media_type=content_type,
+            headers=headers,
+        )
+
+    if not payload:
+        raise HTTPException(status_code=404, detail="Instalador desktop sem arquivo publicado")
+
+    return StreamingResponse(iter([payload]), media_type=content_type, headers=headers)
 
 
 @app.post("/auth/login")
@@ -988,6 +1165,196 @@ async def create_ticket(payload: dict, current_user: User = Depends(get_current_
         db.add(ticket)
         db.commit()
         db.refresh(ticket)
+        ticket_response = serialize_ticket(ticket, db)
+
+        if ticket.assigned_to_id and ticket.assigned_to_id != current_user.id:
+            await notify_ticket_user(
+                ticket.assigned_to_id,
+                "Novo ticket atribuido",
+                f"{current_user.full_name} abriu: {ticket.title}",
+                ticket.id,
+            )
+
+        return ticket_response
+
+
+@app.get("/tickets/{ticket_id}")
+async def get_ticket(ticket_id: int, current_user: User = Depends(get_current_user)):
+    with SessionLocal() as db:
+        ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket nao encontrado.")
+        ensure_ticket_access(ticket, current_user)
+        return serialize_ticket(ticket, db)
+
+
+@app.get("/tickets/{ticket_id}/messages")
+async def list_ticket_messages(ticket_id: int, current_user: User = Depends(get_current_user)):
+    with SessionLocal() as db:
+        ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket nao encontrado.")
+        ensure_ticket_access(ticket, current_user)
+
+        messages = (
+            db.query(TicketMessage)
+            .filter(TicketMessage.ticket_id == ticket_id)
+            .order_by(TicketMessage.created_at.asc())
+            .all()
+        )
+        return [serialize_ticket_message(message, db) for message in messages]
+
+
+@app.post("/tickets/{ticket_id}/messages")
+async def create_ticket_message(ticket_id: int, payload: dict, current_user: User = Depends(get_current_user)):
+    content = str(payload.get("content") or "").strip()
+    file_id = payload.get("file_id")
+    if not content and not file_id:
+        raise HTTPException(status_code=400, detail="Informe uma mensagem ou anexo.")
+
+    with SessionLocal() as db:
+        ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket nao encontrado.")
+        ensure_ticket_access(ticket, current_user)
+        if ticket.status == "Resolvido":
+            raise HTTPException(status_code=400, detail="Ticket resolvido nao recebe novas mensagens.")
+
+        if file_id:
+            attachment = db.query(FileUpload).filter(FileUpload.id == int(file_id)).first()
+            if not attachment:
+                raise HTTPException(status_code=400, detail="Anexo nao encontrado.")
+
+        message = TicketMessage(
+            ticket_id=ticket.id,
+            sender_id=current_user.id,
+            content=content,
+            file_id=int(file_id) if file_id else None,
+        )
+        db.add(message)
+
+        if not ticket.first_response_at and current_user.id != ticket.created_by_id:
+            ticket.first_response_at = datetime.utcnow()
+        if ticket.status == "Aberto" and current_user.id != ticket.created_by_id:
+            ticket.status = "Em andamento"
+        ticket.updated_at = datetime.utcnow()
+
+        db.commit()
+        db.refresh(message)
+        db.refresh(ticket)
+        message_response = serialize_ticket_message(message, db)
+
+        notify_user_id = ticket.created_by_id if current_user.id == ticket.assigned_to_id else ticket.assigned_to_id
+        if notify_user_id and notify_user_id != current_user.id:
+            await notify_ticket_user(
+                notify_user_id,
+                "Nova conversa no ticket",
+                f"{current_user.full_name} respondeu em: {ticket.title}",
+                ticket.id,
+            )
+
+        return message_response
+
+
+@app.patch("/tickets/{ticket_id}/transfer")
+async def transfer_ticket(ticket_id: int, payload: dict, current_user: User = Depends(get_current_user)):
+    assigned_to_id = payload.get("assigned_to_id")
+    if not assigned_to_id:
+        raise HTTPException(status_code=400, detail="Selecione um novo responsavel.")
+
+    note = str(payload.get("message") or "").strip()
+    with SessionLocal() as db:
+        ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket nao encontrado.")
+        ensure_ticket_access(ticket, current_user)
+
+        assigned_user = db.query(User).filter(User.id == int(assigned_to_id), User.is_active == True).first()
+        if not assigned_user:
+            raise HTTPException(status_code=400, detail="Usuario responsavel nao encontrado.")
+        if is_coordinator(current_user) and not is_admin(current_user) and assigned_user.department != current_user.department:
+            raise HTTPException(status_code=403, detail="Responsavel precisa estar no mesmo setor.")
+
+        ticket.assigned_to_id = assigned_user.id
+        ticket.status = "Em andamento" if ticket.status != "Resolvido" else ticket.status
+        ticket.updated_at = datetime.utcnow()
+        db.add(TicketMessage(
+            ticket_id=ticket.id,
+            sender_id=current_user.id,
+            content=note or f"Ticket repassado para {assigned_user.full_name}.",
+        ))
+        db.commit()
+        db.refresh(ticket)
+        ticket_response = serialize_ticket(ticket, db)
+
+        if assigned_user.id != current_user.id:
+            await notify_ticket_user(
+                assigned_user.id,
+                "Ticket repassado para voce",
+                f"{current_user.full_name} repassou: {ticket.title}",
+                ticket.id,
+            )
+
+        return ticket_response
+
+
+@app.post("/tickets/{ticket_id}/close")
+async def close_ticket(ticket_id: int, payload: dict, current_user: User = Depends(get_current_user)):
+    note = str(payload.get("message") or "").strip()
+    with SessionLocal() as db:
+        ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket nao encontrado.")
+        ensure_ticket_access(ticket, current_user)
+
+        ticket.status = "Resolvido"
+        ticket.closed_at = ticket.closed_at or datetime.utcnow()
+        ticket.updated_at = datetime.utcnow()
+        db.add(TicketMessage(
+            ticket_id=ticket.id,
+            sender_id=current_user.id,
+            content=note or "Ticket fechado.",
+        ))
+        db.commit()
+        db.refresh(ticket)
+        ticket_response = serialize_ticket(ticket, db)
+
+        if ticket.created_by_id != current_user.id:
+            await notify_ticket_user(
+                ticket.created_by_id,
+                "Ticket fechado",
+                f"{current_user.full_name} fechou: {ticket.title}. Avalie o atendimento.",
+                ticket.id,
+            )
+
+        return ticket_response
+
+
+@app.post("/tickets/{ticket_id}/rating")
+async def rate_ticket(ticket_id: int, payload: dict, current_user: User = Depends(get_current_user)):
+    try:
+        rating_score = int(payload.get("rating_score"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="Informe uma avaliacao de 1 a 5.")
+    if rating_score < 1 or rating_score > 5:
+        raise HTTPException(status_code=400, detail="A avaliacao deve ficar entre 1 e 5.")
+
+    with SessionLocal() as db:
+        ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket nao encontrado.")
+        ensure_ticket_access(ticket, current_user)
+        if ticket.created_by_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Somente o dono do ticket pode avaliar.")
+        if ticket.status != "Resolvido":
+            raise HTTPException(status_code=400, detail="Avalie apenas depois do fechamento.")
+
+        ticket.rating_score = rating_score
+        ticket.rating_comment = str(payload.get("rating_comment") or "").strip() or None
+        ticket.rated_at = datetime.utcnow()
+        ticket.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(ticket)
         return serialize_ticket(ticket, db)
 
 
@@ -1005,6 +1372,8 @@ async def update_ticket(ticket_id: int, payload: dict, current_user: User = Depe
             can_edit = ticket.created_by_id == current_user.id or ticket.assigned_to_id == current_user.id
         if not can_edit:
             raise HTTPException(status_code=403, detail="Sem permissao para editar este ticket.")
+
+        previous_assigned_to_id = ticket.assigned_to_id
 
         for field in ["title", "description", "priority", "status", "department", "channel"]:
             if field in payload:
@@ -1039,7 +1408,17 @@ async def update_ticket(ticket_id: int, payload: dict, current_user: User = Depe
         ticket.updated_at = datetime.utcnow()
         db.commit()
         db.refresh(ticket)
-        return serialize_ticket(ticket, db)
+        ticket_response = serialize_ticket(ticket, db)
+
+        if ticket.assigned_to_id and ticket.assigned_to_id != previous_assigned_to_id and ticket.assigned_to_id != current_user.id:
+            await notify_ticket_user(
+                ticket.assigned_to_id,
+                "Ticket atribuido a voce",
+                f"{current_user.full_name} atribuiu: {ticket.title}",
+                ticket.id,
+            )
+
+        return ticket_response
 
 
 @app.get("/tasks/")
@@ -1187,6 +1566,13 @@ async def assistant_request(payload: dict, current_user: User = Depends(get_curr
             response["executed"] = True
             response["ticket"] = serialize_ticket(ticket, db)
             response["reply"] = f"Criei o ticket #{ticket.id} para {plan['department']} com prioridade {plan['ticket_priority']}."
+            if ticket.assigned_to_id and ticket.assigned_to_id != current_user.id:
+                await notify_ticket_user(
+                    ticket.assigned_to_id,
+                    "Novo ticket atribuido",
+                    f"{current_user.full_name} abriu via assistente: {ticket.title}",
+                    ticket.id,
+                )
             return response
 
         task = TaskItem(
@@ -1434,6 +1820,7 @@ async def upload_file(file: UploadFile = File(...), current_user: User = Depends
             file_path=str(file_path),
             file_size=len(content),
             content_type=file.content_type or "application/octet-stream",
+            binary_data=content,
             uploaded_by=current_user.id,
         )
         db.add(file_record)
@@ -1478,9 +1865,20 @@ async def download_file(file_id: int, current_user: User = Depends(get_current_u
         file_path = file_record.file_path
         filename = file_record.filename
         content_type = file_record.content_type
+        binary_data = bytes(file_record.binary_data or b"") if file_record.binary_data else None
 
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Arquivo nao existe")
+        if not binary_data:
+            raise HTTPException(status_code=404, detail="Arquivo nao existe")
+        return StreamingResponse(
+            iter([binary_data]),
+            media_type=content_type,
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Content-Length": str(len(binary_data)),
+                "Cache-Control": "no-store",
+            },
+        )
 
     return FileResponse(path=file_path, filename=filename, media_type=content_type)
 

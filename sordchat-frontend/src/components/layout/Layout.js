@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell,
-  Bot,
   BriefcaseBusiness,
   Cake,
   ChevronLeft,
@@ -19,6 +18,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useWebSocket } from '../../contexts/WebSocketContext';
 import BrandLogo from '../common/BrandLogo';
+import AssistantPopup from '../AssistantPopup';
 import { isBirthdayToday } from '../../utils/birthdays';
 
 const pageMeta = {
@@ -30,7 +30,6 @@ const pageMeta = {
   '/files': ['Arquivos', 'Documentos e anexos compartilhados'],
   '/users': ['Usuarios', 'Equipe e permissoes'],
   '/birthdays': ['Aniversarios', 'Ultimos e proximos aniversariantes'],
-  '/assistant': ['Assistente', 'Crie tickets e tarefas com linguagem natural'],
   '/admin': ['Admin', 'Gestao global do workspace'],
   '/coordinator': ['Coordenacao', 'Gestao do setor coordenado'],
   '/notifications': ['Notificacoes', 'Eventos recentes do workspace'],
@@ -51,7 +50,6 @@ const Layout = ({ children }) => {
     { name: 'Arquivos', icon: Files, path: '/files', show: true },
     { name: 'Usuarios', icon: Users, path: '/users', show: isCoordinator() },
     { name: 'Aniversarios', icon: Cake, path: '/birthdays', show: true },
-    { name: 'Assistente', icon: Bot, path: '/assistant', show: true },
     { name: 'Admin', icon: ShieldCheck, path: '/admin', show: isAdmin() },
     { name: 'Coordenacao', icon: BriefcaseBusiness, path: '/coordinator', show: isCoordinator() },
     { name: 'Alertas', icon: Bell, path: '/notifications', show: true },
@@ -170,6 +168,7 @@ const Layout = ({ children }) => {
 
         <main className="page-content">{children}</main>
       </div>
+      <AssistantPopup />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Bell, CheckCheck, Clock3, FileUp, MessageSquare, Ticket } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -44,6 +44,28 @@ const Notifications = () => {
     }
   });
   const [filter, setFilter] = useState('Todas');
+
+  useEffect(() => {
+    const refreshNotifications = (event) => {
+      if (Array.isArray(event.detail)) {
+        setNotifications(event.detail);
+        return;
+      }
+
+      try {
+        setNotifications(JSON.parse(localStorage.getItem('sordchat:notifications')) || initialNotifications);
+      } catch {
+        setNotifications(initialNotifications);
+      }
+    };
+
+    window.addEventListener('sordchat:notifications-updated', refreshNotifications);
+    window.addEventListener('storage', refreshNotifications);
+    return () => {
+      window.removeEventListener('sordchat:notifications-updated', refreshNotifications);
+      window.removeEventListener('storage', refreshNotifications);
+    };
+  }, []);
 
   const saveNotifications = (nextNotifications) => {
     setNotifications(nextNotifications);

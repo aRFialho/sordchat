@@ -108,6 +108,8 @@ const getAttachmentIcon = (extension) => {
   return FileText;
 };
 
+const attachmentPreviewUrlCache = new Map();
+
 const fetchAttachmentBlob = async (fileId) => {
   const token = localStorage.getItem('token');
   const response = await fetch(`${API_BASE_URL}/files/download/${fileId}`, {
@@ -128,28 +130,38 @@ const AttachmentPreview = ({ message, isOwn }) => {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewFailed, setPreviewFailed] = useState(false);
   const filename = message.content || 'Arquivo';
+  const fileId = message.file_path;
   const extension = getFileExtension(filename);
   const isImage = imageExtensions.has(extension);
   const Icon = getAttachmentIcon(extension);
 
   useEffect(() => {
-    let objectUrl = '';
     let cancelled = false;
 
-    if (!isImage || !message.file_path) {
+    if (!isImage || !fileId) {
+      return undefined;
+    }
+
+    const cacheKey = String(fileId);
+    const cachedPreviewUrl = attachmentPreviewUrlCache.get(cacheKey);
+    if (cachedPreviewUrl) {
+      setPreviewUrl(cachedPreviewUrl);
+      setLoadingPreview(false);
+      setPreviewFailed(false);
       return undefined;
     }
 
     setLoadingPreview(true);
     setPreviewFailed(false);
 
-    fetchAttachmentBlob(message.file_path)
+    fetchAttachmentBlob(fileId)
       .then((blob) => {
         if (cancelled) {
           return;
         }
 
-        objectUrl = URL.createObjectURL(blob);
+        const objectUrl = URL.createObjectURL(blob);
+        attachmentPreviewUrlCache.set(cacheKey, objectUrl);
         setPreviewUrl(objectUrl);
       })
       .catch(() => {
@@ -165,31 +177,25 @@ const AttachmentPreview = ({ message, isOwn }) => {
 
     return () => {
       cancelled = true;
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
     };
-  }, [isImage, message.file_path]);
+  }, [fileId, isImage]);
 
   const handleDownload = async () => {
-    if (!message.file_path) {
+    if (!fileId) {
       toast.error('Arquivo indisponivel para download.');
       return;
     }
 
     try {
-      const blob = previewUrl ? null : await fetchAttachmentBlob(message.file_path);
-      const downloadUrl = previewUrl || URL.createObjectURL(blob);
+      const blob = await fetchAttachmentBlob(fileId);
+      const downloadUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = filename;
       document.body.appendChild(link);
       link.click();
       link.remove();
-
-      if (!previewUrl) {
-        window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
-      }
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
     } catch (error) {
       toast.error(error.message || 'Nao foi possivel baixar o arquivo.');
     }
@@ -224,6 +230,7 @@ const AttachmentPreview = ({ message, isOwn }) => {
         </div>
         <button className="attachment-card__download" type="button" onClick={handleDownload} title="Baixar arquivo">
           <Download size={16} />
+          <span>Baixar</span>
         </button>
       </div>
     </div>

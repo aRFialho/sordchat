@@ -49,7 +49,7 @@ const Landing = () => {
             <a href="#assistente">Assistente</a>
           </div>
           <div className="lp-nav-actions">
-            <a className="lp-btn" href={DESKTOP_DOWNLOAD_URL}>
+            <a className="lp-btn" href={DESKTOP_DOWNLOAD_URL} target="_blank" rel="noreferrer">
               <Download size={17} />
               App desktop
             </a>
@@ -84,7 +84,7 @@ const Landing = () => {
               <a className="lp-btn" href="#painel">
                 Ver experiencia
               </a>
-              <a className="lp-btn" href={DESKTOP_DOWNLOAD_URL}>
+              <a className="lp-btn" href={DESKTOP_DOWNLOAD_URL} target="_blank" rel="noreferrer">
                 <MonitorDown size={18} />
                 Baixar app
               </a>
@@ -233,7 +233,7 @@ const Landing = () => {
               ate amanha" e transforma em tickets ou tarefas com prioridade, setor e responsavel.
             </p>
           </div>
-          <Link className="lp-btn lp-btn--primary" to="/assistant">
+          <Link className="lp-btn lp-btn--primary" to="/login">
             Abrir assistente
             <Bot size={18} />
           </Link>
@@ -269,7 +269,7 @@ const Landing = () => {
               Entrar no SorDChat
               <ArrowRight size={18} />
             </Link>
-            <a className="lp-btn" href={DESKTOP_DOWNLOAD_URL}>
+            <a className="lp-btn" href={DESKTOP_DOWNLOAD_URL} target="_blank" rel="noreferrer">
               <Download size={18} />
               Baixar desktop
             </a>

@@ -11,10 +11,7 @@ const getVersionKey = (version) => {
 
 const fetchJsonNoCache = async (url) => {
   const separator = url.includes('?') ? '&' : '?';
-  const response = await fetch(`${url}${separator}t=${Date.now()}`, {
-    cache: 'no-store',
-    headers: { 'Cache-Control': 'no-cache' },
-  });
+  const response = await fetch(`${url}${separator}t=${Date.now()}`);
 
   if (!response.ok) {
     throw new Error(`Version check failed: ${response.status}`);

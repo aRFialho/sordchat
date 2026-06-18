@@ -114,6 +114,27 @@ export const WebSocketProvider = ({ children }) => {
         }
         break;
 
+      case 'notification': {
+        const notification = data.notification;
+        if (!notification) {
+          break;
+        }
+
+        try {
+          const stored = JSON.parse(localStorage.getItem('sordchat:notifications')) || [];
+          const nextNotifications = [
+            notification,
+            ...stored.filter((item) => item.id !== notification.id),
+          ].slice(0, 100);
+          localStorage.setItem('sordchat:notifications', JSON.stringify(nextNotifications));
+          window.dispatchEvent(new CustomEvent('sordchat:notifications-updated', { detail: nextNotifications }));
+        } catch (error) {
+          console.error('Erro ao salvar notificacao:', error);
+        }
+        toast.success(notification.title || 'Nova notificacao');
+        break;
+      }
+
       case 'pong':
         break;
 
