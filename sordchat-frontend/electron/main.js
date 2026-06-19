@@ -19,7 +19,8 @@ const { app, BrowserWindow, shell } = electron;
 
 const isDev = process.env.ELECTRON_START_URL;
 const appIcon = path.join(__dirname, 'assets', 'icon.ico');
-const productionWebUrl = process.env.VOLTCORP_WEB_URL || 'https://voltcorp-web.onrender.com';
+const productionWebUrl =
+  process.env.VOLTCORP_WEB_URL || process.env.SORDCHAT_WEB_URL || 'https://sordchat-web.onrender.com';
 let mainWindow = null;
 
 const getLocalAppUrl = () => {

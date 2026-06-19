@@ -27,7 +27,7 @@ IS_PRODUCTION = os.getenv("ENVIRONMENT", "development").lower() == "production"
 APP_VERSION = os.getenv("APP_VERSION") or os.getenv("RENDER_GIT_COMMIT") or "local"
 APP_BUILD_TIME = os.getenv("APP_BUILD_TIME")
 DEFAULT_FRONTEND_ORIGINS = [
-    "https://voltcorp-web.onrender.com",
+    "https://sordchat-web.onrender.com",
 ]
 DEFAULT_DEPARTMENTS = ["TI", "Suporte", "Comercial", "Financeiro", "Operacao", "Produto"]
 DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001"
