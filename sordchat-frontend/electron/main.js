@@ -1,28 +1,56 @@
-const { app, BrowserWindow, shell } = require('electron');
+const electron = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
+if (!electron.app) {
+  const { spawn } = require('child_process');
+  const env = { ...process.env };
+  delete env.ELECTRON_RUN_AS_NODE;
+  spawn(process.execPath, process.argv.slice(1), {
+    detached: true,
+    env,
+    stdio: 'ignore',
+    windowsHide: false,
+  }).unref();
+  process.exit(0);
+}
+
+const { app, BrowserWindow, shell } = electron;
+
 const isDev = process.env.ELECTRON_START_URL;
 const appIcon = path.join(__dirname, 'assets', 'icon.ico');
+let mainWindow = null;
 
 if (process.platform === 'win32') {
-  app.setAppUserModelId('com.sordchat.app');
+  app.setAppUserModelId('com.voltcorp.app');
 }
 
 function createWindow() {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1280,
     height: 820,
     minWidth: 1024,
     minHeight: 680,
     backgroundColor: '#f6f7f9',
-    title: 'SorDChat',
+    title: 'Volt Corp',
     icon: appIcon,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
     },
+  });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+    console.error(`Falha ao carregar ${validatedURL}: ${errorCode} ${errorDescription}`);
+  });
+
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error(`Processo de renderizacao encerrado: ${details.reason}`);
   });
 
   if (isDev) {

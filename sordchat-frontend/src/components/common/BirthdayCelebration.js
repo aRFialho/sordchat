@@ -22,7 +22,7 @@ const BirthdayCelebration = () => {
     if (!user?.id) {
       return null;
     }
-    return `sordchat:birthday-celebration:${user.id}:${getTodayKey()}`;
+    return `voltcorp:birthday-celebration:${user.id}:${getTodayKey()}`;
   }, [user?.id]);
 
   useEffect(() => {
@@ -61,7 +61,7 @@ const BirthdayCelebration = () => {
         </div>
         <h2>Feliz aniversario, {user.full_name || user.username}!</h2>
         <p>
-          Hoje e seu dia no SorDChat. Que venha um ciclo leve, produtivo e cheio de boas conversas.
+          Hoje e seu dia no Volt Corp. Que venha um ciclo leve, produtivo e cheio de boas conversas.
         </p>
         <span className="badge badge--success">
           <Cake size={13} />

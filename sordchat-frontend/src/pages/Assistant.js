@@ -67,7 +67,7 @@ const Assistant = () => {
         <div>
           <span className="badge badge--success">
             <Sparkles size={13} />
-            Assistente SorDChat
+            Assistente Volt Corp
           </span>
           <h2>Descreva a solicitacao. O assistente cria o fluxo.</h2>
           <p>
@@ -116,7 +116,7 @@ const Assistant = () => {
             <div className="assistant-empty">
               <Bot size={34} />
               <h3>Nenhuma solicitacao criada ainda</h3>
-              <p>Escreva em linguagem natural e deixe o SorDChat organizar a acao.</p>
+              <p>Escreva em linguagem natural e deixe o Volt Corp organizar a acao.</p>
             </div>
           ) : (
             <div className="assistant-created">

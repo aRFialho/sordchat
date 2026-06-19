@@ -30,7 +30,7 @@ def test_file_upload():
     headers = {"Authorization": f"Bearer {token}"}
 
     # Criar arquivo de teste
-    test_file_content = "Este é um arquivo de teste do SorDChat!\nData: " + datetime.now().isoformat()
+    test_file_content = "Este é um arquivo de teste do Volt Corp!\nData: " + datetime.now().isoformat()
     test_file_path = "test_file.txt"
 
     with open(test_file_path, "w", encoding="utf-8") as f:
@@ -230,7 +230,7 @@ def test_integration():
 def main():
     """Função principal de teste"""
 
-    print("🚀 SorDChat - Teste de Funcionalidades Avançadas")
+    print("🚀 Volt Corp - Teste de Funcionalidades Avançadas")
     print("=" * 60)
 
     # Testar upload de arquivos

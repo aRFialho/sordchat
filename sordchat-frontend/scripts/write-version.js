@@ -24,7 +24,7 @@ const getCommit = () => {
 
 const version = {
   service: 'web',
-  app: 'SorDChat',
+  app: 'Volt Corp',
   version: packageJson.version,
   commit: getCommit(),
   build_time: new Date().toISOString(),

@@ -1,5 +1,5 @@
 """
-Script para configurar o banco de dados do SorDChat
+Script para configurar o banco de dados do Volt Corp
 """
 
 import sys

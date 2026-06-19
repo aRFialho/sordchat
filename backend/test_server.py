@@ -5,11 +5,11 @@ Servidor de teste simplificado
 from fastapi import FastAPI
 import uvicorn
 
-app = FastAPI(title="SorDChat API - Teste")
+app = FastAPI(title="Volt Corp API - Teste")
 
 @app.get("/")
 async def root():
-    return {"message": "SorDChat funcionando!", "status": "OK"}
+    return {"message": "Volt Corp funcionando!", "status": "OK"}
 
 @app.get("/health")
 async def health():

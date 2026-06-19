@@ -1,5 +1,5 @@
 """
-SorDChat API - Launcher Final
+Volt Corp API - Launcher Final
 """
 
 import uvicorn
@@ -33,7 +33,7 @@ def main():
         print("❌ Nenhuma porta disponível entre 8000-8009")
         return
 
-    print("🚀 SorDChat API - Servidor de Produção")
+    print("🚀 Volt Corp API - Servidor de Produção")
     print(f"📡 API: http://127.0.0.1:{port}")
     print(f"📚 Documentação: http://127.0.0.1:{port}/docs")
     print(f"🔍 Status: http://127.0.0.1:{port}/status")

@@ -45,7 +45,7 @@ def create_test_users():
                            email           = %s,
                            full_name       = %s
                        WHERE username = 'admin'
-                       """, (admin_hash, "admin@sordchat.com", "Administrador Master"))
+                       """, (admin_hash, "admin@voltcorp.com", "Administrador Master"))
 
         # Usuário coordenador
         coord_hash = hash_password("coord123")
@@ -57,7 +57,7 @@ def create_test_users():
                            email = EXCLUDED.email,
                            full_name = EXCLUDED.full_name,
                            department = EXCLUDED.department
-                       """, ("coordenador", "coord@sordchat.com", "João Coordenador", coord_hash, "TI", "coordenador"))
+                       """, ("coordenador", "coord@voltcorp.com", "João Coordenador", coord_hash, "TI", "coordenador"))
 
         # Usuário padrão
         user_hash = hash_password("user123")
@@ -69,7 +69,7 @@ def create_test_users():
                            email = EXCLUDED.email,
                            full_name = EXCLUDED.full_name,
                            department = EXCLUDED.department
-                       """, ("usuario", "user@sordchat.com", "Maria Usuária", user_hash, "Vendas", "padrao"))
+                       """, ("usuario", "user@voltcorp.com", "Maria Usuária", user_hash, "Vendas", "padrao"))
 
         conn.commit()
 

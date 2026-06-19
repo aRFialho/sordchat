@@ -47,7 +47,7 @@ const ChangePassword = () => {
           </span>
           <h1 className="m-0 mt-4 text-2xl font-extrabold text-slate-950">Troque sua senha</h1>
           <p className="m-0 mt-2 text-sm text-slate-500">
-            {user?.full_name || user?.name}, defina uma senha propria para liberar o SorDChat.
+            {user?.full_name || user?.name}, defina uma senha propria para liberar o Volt Corp.
           </p>
 
           <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>

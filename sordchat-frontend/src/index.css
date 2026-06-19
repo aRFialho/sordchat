@@ -2270,8 +2270,9 @@ button:disabled {
 
 .attachment-card {
   display: grid;
-  width: min(380px, 72vw);
-  overflow: hidden;
+  width: min(100%, 420px);
+  max-width: calc(100vw - 88px);
+  overflow: visible;
   border: 1px solid #e1e8f2;
   border-radius: 8px;
   background: #ffffff;
@@ -2314,7 +2315,8 @@ button:disabled {
 }
 
 .attachment-card__body {
-  display: flex;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 12px;
@@ -2355,7 +2357,7 @@ button:disabled {
 
 .attachment-card__download {
   display: inline-flex;
-  min-width: 38px;
+  min-width: 42px;
   height: 38px;
   flex: 0 0 auto;
   align-items: center;
@@ -2368,6 +2370,7 @@ button:disabled {
   font-size: 12px;
   font-weight: 900;
   padding: 0 10px;
+  white-space: nowrap;
 }
 
 .attachment-card__download:hover {
@@ -2376,6 +2379,31 @@ button:disabled {
 
 .attachment-card__download span {
   color: inherit !important;
+}
+
+@media (max-width: 520px) {
+  .attachment-card {
+    max-width: calc(100vw - 56px);
+  }
+
+  .attachment-card__body {
+    gap: 8px;
+    grid-template-columns: 36px minmax(0, 1fr) 42px;
+    padding: 10px;
+  }
+
+  .attachment-card__icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .attachment-card__download {
+    padding: 0;
+  }
+
+  .attachment-card__download span {
+    display: none;
+  }
 }
 
 .tenant-tabs {

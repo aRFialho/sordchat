@@ -14,7 +14,7 @@ def create_tables_simple():
     """Cria as tabelas usando SQL direto"""
     try:
         # Conectar ao banco
-        database_url = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/sordchat_db")
+        database_url = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/voltcorp_db")
 
         # Extrair informações da URL
         from urllib.parse import urlparse
@@ -167,7 +167,7 @@ def create_tables_simple():
         # Inserir usuário master padrão
         cursor.execute("""
                        INSERT INTO users (username, email, full_name, hashed_password, access_level)
-                       VALUES ('admin', 'admin@sordchat.com', 'Administrador', '$2b$12$dummy.hash.for.testing',
+                       VALUES ('admin', 'admin@voltcorp.com', 'Administrador', '$2b$12$dummy.hash.for.testing',
                                'master') ON CONFLICT (username) DO NOTHING;
                        """)
         conn.commit()
@@ -186,7 +186,7 @@ def create_tables_simple():
 
 def main():
     """Função principal"""
-    print("🚀 Criando banco de dados do SorDChat (Método Simplificado)...")
+    print("🚀 Criando banco de dados do Volt Corp (Método Simplificado)...")
     print("=" * 60)
 
     if create_tables_simple():

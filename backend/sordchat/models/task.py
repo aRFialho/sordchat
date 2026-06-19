@@ -1,5 +1,5 @@
 """
-Modelo de Tasks do SorDChat
+Modelo de Tasks do Volt Corp
 """
 
 from sqlalchemy import Column, Integer, String, DateTime, Text, Enum, ForeignKey, Boolean, JSON

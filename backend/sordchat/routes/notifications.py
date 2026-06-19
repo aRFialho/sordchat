@@ -22,7 +22,7 @@ try:
 except ImportError:
     import jwt
 
-    SECRET_KEY = "sordchat_secret_key_2025"
+    SECRET_KEY = "voltcorp_secret_key_2025"
     ALGORITHM = "HS256"
 
 

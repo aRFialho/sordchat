@@ -1,9 +1,9 @@
 {
-  "short_name": "SorDChat",
-  "name": "SorDChat",
+  "short_name": "Volt Corp",
+  "name": "Volt Corp",
   "icons": [
     {
-      "src": "brand/sordchat-mark.svg",
+      "src": "brand/voltcorp-mark.svg",
       "type": "image/svg+xml",
       "sizes": "512x512",
       "purpose": "any"

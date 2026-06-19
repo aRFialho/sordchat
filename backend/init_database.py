@@ -1,5 +1,5 @@
 """
-Script de inicialização do banco de dados SorDChat
+Script de inicialização do banco de dados Volt Corp
 Versão robusta sem conflitos de import
 """
 
@@ -31,7 +31,7 @@ def test_database_connection():
         from urllib.parse import urlparse
 
         # Obter URL do banco
-        database_url = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/sordchat_db")
+        database_url = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/voltcorp_db")
         parsed = urlparse(database_url)
 
         # Conectar
@@ -69,7 +69,7 @@ def create_database_tables():
         import enum
 
         # URL do banco
-        database_url = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/sordchat_db")
+        database_url = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/voltcorp_db")
         engine = create_engine(database_url, echo=True)
 
         metadata = MetaData()
@@ -197,7 +197,7 @@ def create_database_tables():
 
 def main():
     """Função principal"""
-    print("🚀 Inicializando banco de dados do SorDChat...")
+    print("🚀 Inicializando banco de dados do Volt Corp...")
     print("=" * 50)
 
     # Passo 1: Configurar ambiente
@@ -208,7 +208,7 @@ def main():
     if not test_database_connection():
         print("\n💡 Dicas para resolver:")
         print("1. Verifique se o PostgreSQL está rodando")
-        print("2. Confirme se o banco 'sordchat_db' existe")
+        print("2. Confirme se o banco 'voltcorp_db' existe")
         print("3. Verifique a senha no arquivo .env")
         return
 

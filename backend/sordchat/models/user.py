@@ -1,5 +1,5 @@
 """
-Modelo de Usuários do SorDChat
+Modelo de Usuários do Volt Corp
 """
 
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, Enum

@@ -65,7 +65,7 @@ const AssistantPopup = () => {
   return (
     <div className={`assistant-popup ${open ? 'assistant-popup--open' : ''}`}>
       {open ? (
-        <section className="assistant-popup__panel" aria-label="Assistente SorDChat">
+        <section className="assistant-popup__panel" aria-label="Assistente Volt Corp">
           <header className="assistant-popup__header">
             <div className="assistant-popup__title">
               <span className="assistant-popup__mark">

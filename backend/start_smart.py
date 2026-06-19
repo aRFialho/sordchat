@@ -1,5 +1,5 @@
 """
-Iniciador inteligente do SorDChat - testa várias portas
+Iniciador inteligente do Volt Corp - testa várias portas
 """
 
 import uvicorn
@@ -45,7 +45,7 @@ def main():
             print("❌ Nenhuma porta disponível encontrada entre 8000-8009")
             return
 
-        print("🚀 SorDChat API - Iniciando...")
+        print("🚀 Volt Corp API - Iniciando...")
         print(f"📡 Servidor: http://127.0.0.1:{port}")
         print(f"📚 Documentação: http://127.0.0.1:{port}/docs")
         print(f"🔧 Porta escolhida: {port}")

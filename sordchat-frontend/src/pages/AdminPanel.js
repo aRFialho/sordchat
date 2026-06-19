@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Building2,
   CheckCircle2,
+  Download,
   FileSpreadsheet,
   GitBranch,
   KeyRound,
@@ -61,6 +62,32 @@ const roleLabel = {
 const statusLabel = {
   active: 'Ativo',
   inactive: 'Inativo',
+};
+
+const importTemplateColumns = {
+  companies: ['nome_empresa', 'cnpj', 'responsavel', 'telefone_1', 'telefone_2', 'status'],
+  users: ['nome_usuario', 'email', 'senha_primaria', 'id_empresa', 'telefone', 'setor', 'nivel_usuario', 'status'],
+};
+
+const csvEscape = (value) => {
+  const text = String(value ?? '');
+  if (/[;"\r\n]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+};
+
+const downloadCsv = (filename, rows) => {
+  const csv = rows.map((row) => row.map(csvEscape).join(';')).join('\r\n');
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
 
 const requestJson = async (path, options = {}) => {
@@ -226,6 +253,23 @@ const AdminPanel = () => {
     } catch (error) {
       toast.error(error.message);
     }
+  };
+
+  const handleDownloadImportTemplate = () => {
+    const companyIdExample = companies[0]?.id || 'COLE_AQUI_O_ID_DA_EMPRESA';
+    const rowsByKind = {
+      companies: [
+        importTemplateColumns.companies,
+        ['Empresa Exemplo Ltda', '12345678000190', 'Maria Responsavel', '11999990000', '1133334444', 'active'],
+      ],
+      users: [
+        importTemplateColumns.users,
+        ['Joao Usuario', 'joao.usuario@empresa.com', 'Senha@123', companyIdExample, '11988887777', 'Atendimento', 'user', 'active'],
+      ],
+    };
+    const filename = importKind === 'companies' ? 'modelo-importacao-empresas.csv' : 'modelo-importacao-usuarios.csv';
+    downloadCsv(filename, rowsByKind[importKind]);
+    toast.success('Modelo de planilha baixado.');
   };
 
   const handleConfirmImport = async () => {
@@ -478,6 +522,10 @@ const AdminPanel = () => {
             <option value="companies">Empresas</option>
             <option value="users">Usuarios</option>
           </select>
+          <button className="button-secondary" type="button" onClick={handleDownloadImportTemplate}>
+            <Download size={16} />
+            Baixar modelo
+          </button>
           <input className="input" type="file" accept=".csv,.tsv,.txt,.xlsx" onChange={(event) => setImportFile(event.target.files?.[0] || null)} />
           <button className="button-secondary" type="button" onClick={handlePreviewImport}>
             <Upload size={16} />

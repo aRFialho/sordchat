@@ -20,14 +20,14 @@ from sqlalchemy.orm import relationship, sessionmaker
 import uvicorn
 
 
-SECRET_KEY = os.getenv("SECRET_KEY", "sordchat_secret_key_super_secure_2024")
+SECRET_KEY = os.getenv("SECRET_KEY", "voltcorp_secret_key_super_secure_2024")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 IS_PRODUCTION = os.getenv("ENVIRONMENT", "development").lower() == "production"
 APP_VERSION = os.getenv("APP_VERSION") or os.getenv("RENDER_GIT_COMMIT") or "local"
 APP_BUILD_TIME = os.getenv("APP_BUILD_TIME")
 DEFAULT_FRONTEND_ORIGINS = [
-    "https://sordchat-web.onrender.com",
+    "https://voltcorp-web.onrender.com",
 ]
 DEFAULT_DEPARTMENTS = ["TI", "Suporte", "Comercial", "Financeiro", "Operacao", "Produto"]
 DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001"
@@ -64,7 +64,7 @@ def normalize_database_url(database_url: str) -> str:
     return database_url
 
 
-DATABASE_URL = normalize_database_url(os.getenv("DATABASE_URL", "sqlite:///./sordchat.db"))
+DATABASE_URL = normalize_database_url(os.getenv("DATABASE_URL", "sqlite:///./voltcorp.db"))
 engine_options = {"pool_pre_ping": True}
 if DATABASE_URL.startswith("sqlite"):
     engine_options["connect_args"] = {"check_same_thread": False}
@@ -326,7 +326,7 @@ def get_cors_origins():
     return sorted(set(origins))
 
 
-app = FastAPI(title="SorDChat API", version="1.0.0")
+app = FastAPI(title="Volt Corp API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_cors_origins(),
@@ -1003,7 +1003,7 @@ def create_default_users():
     default_users = [
         {
             "username": "admin",
-            "email": "admin@sordchat.com",
+            "email": "admin@voltcorp.com",
             "full_name": "Administrador Master",
             "password": "admin123",
             "access_level": "master",
@@ -1015,7 +1015,7 @@ def create_default_users():
         },
         {
             "username": "coordenador",
-            "email": "coord@sordchat.com",
+            "email": "coord@voltcorp.com",
             "full_name": "Coordenador Sistema",
             "password": "coord123",
             "access_level": "coordenador",
@@ -1027,7 +1027,7 @@ def create_default_users():
         },
         {
             "username": "usuario",
-            "email": "user@sordchat.com",
+            "email": "user@voltcorp.com",
             "full_name": "Usuario Padrao",
             "password": "user123",
             "access_level": "usuario",
@@ -1353,7 +1353,7 @@ async def startup_event():
 
 @app.get("/")
 async def root():
-    return {"message": "SorDChat API", "version": "1.0.0", "status": "online"}
+    return {"message": "Volt Corp API", "version": "1.0.0", "status": "online"}
 
 
 @app.get("/health")
@@ -1365,7 +1365,7 @@ async def health_check():
 async def version_check():
     return {
         "service": "api",
-        "app": "SorDChat",
+        "app": "Volt Corp",
         "version": APP_VERSION,
         "commit": os.getenv("RENDER_GIT_COMMIT") or APP_VERSION,
         "build_time": APP_BUILD_TIME,
@@ -1446,8 +1446,8 @@ async def download_latest_desktop_release():
             "Content-Disposition": f'attachment; filename="{release.filename}"',
             "Content-Length": str(release.file_size),
             "Cache-Control": "no-store",
-            "X-SorDChat-Version": release.version,
-            "X-SorDChat-Sha256": release.sha256,
+            "X-VoltCorp-Version": release.version,
+            "X-VoltCorp-Sha256": release.sha256,
         }
 
     if storage_mode == "chunks":
@@ -2196,7 +2196,7 @@ async def assistant_request(payload: dict, current_user: User = Depends(get_curr
         }
 
         if not execute:
-            response["reply"] = "Plano montado. Confirme para criar no SorDChat."
+            response["reply"] = "Plano montado. Confirme para criar no Volt Corp."
             return response
 
         if plan["intent"] == "ticket":

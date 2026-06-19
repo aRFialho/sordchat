@@ -1,5 +1,5 @@
 """
-Modelo de Mensagens do SorDChat
+Modelo de Mensagens do Volt Corp
 """
 
 from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Boolean, JSON

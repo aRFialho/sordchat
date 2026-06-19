@@ -4,7 +4,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $frontendRoot = Split-Path -Parent $PSScriptRoot
-$certificateName = "SorDChat-Internal-Code-Signing.cer"
+$certificateName = "VoltCorp-Internal-Code-Signing.cer"
 
 function Test-IsAdministrator {
   $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -20,28 +20,27 @@ function Add-CertificateToStoreIfMissing {
     [switch]$CurrentUser
   )
 
+  $storeLocation = if ($CurrentUser) {
+    [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser
+  } else {
+    [System.Security.Cryptography.X509Certificates.StoreLocation]::LocalMachine
+  }
   $storePath = if ($CurrentUser) { "Cert:\CurrentUser\$StoreName" } else { "Cert:\LocalMachine\$StoreName" }
-  $existingCertificate = Get-ChildItem -Path $StorePath -ErrorAction SilentlyContinue |
-    Where-Object { $_.Thumbprint -eq $Thumbprint } |
-    Select-Object -First 1
+  $store = [System.Security.Cryptography.X509Certificates.X509Store]::new($StoreName, $storeLocation)
+  $store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+  try {
+    $existingCertificate = $store.Certificates | Where-Object { $_.Thumbprint -eq $Thumbprint } | Select-Object -First 1
+    if ($existingCertificate) {
+      Write-Host "Ja confiado em $storePath"
+      return
+    }
 
-  if ($existingCertificate) {
-    Write-Host "Ja confiado em $StorePath"
-    return
+    $certificateToTrust = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($ResolvedCertificatePath)
+    $store.Add($certificateToTrust)
+    Write-Host "Confiado em $storePath"
+  } finally {
+    $store.Close()
   }
-
-  $certutilArguments = @()
-  if ($CurrentUser) {
-    $certutilArguments += "-user"
-  }
-  $certutilArguments += @("-addstore", "-f", $StoreName, $ResolvedCertificatePath)
-
-  & "$env:SystemRoot\System32\certutil.exe" @certutilArguments | Out-Null
-  if ($LASTEXITCODE -ne 0) {
-    throw "Falha ao confiar o certificado em $storePath"
-  }
-
-  Write-Host "Confiado em $StorePath"
 }
 
 if (-not $CertificatePath) {
@@ -68,10 +67,10 @@ if (Test-IsAdministrator) {
   $useCurrentUserStore = $false
   Write-Host "Instalando certificado para todos os usuarios desta maquina."
 } else {
-  $stores = @("TrustedPublisher")
+  $stores = @("Root", "TrustedPublisher")
   $useCurrentUserStore = $true
-  Write-Warning "Sem administrador: sera registrado apenas TrustedPublisher do usuario atual."
-  Write-Warning "Para confiar a raiz interna e validar completamente o .exe, rode este script como administrador."
+  Write-Warning "Sem administrador: sera registrado em Root e TrustedPublisher do usuario atual."
+  Write-Warning "Para confiar para todos os usuarios da maquina, rode este script como administrador."
 }
 
 foreach ($storeName in $stores) {
@@ -82,6 +81,6 @@ foreach ($storeName in $stores) {
     -CurrentUser:$useCurrentUserStore
 }
 
-Write-Host "Certificado interno SorDChat instalado."
+Write-Host "Certificado interno Volt Corp instalado."
 Write-Host "Subject: $($certificate.Subject)"
 Write-Host "Thumbprint: $($certificate.Thumbprint)"

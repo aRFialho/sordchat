@@ -93,7 +93,7 @@ const initialColumns = [
   },
 ];
 
-const STORAGE_KEY = 'sordchat:tasks-board';
+const STORAGE_KEY = 'voltcorp:tasks-board';
 
 const priorityMeta = {
   high: ['Alta', 'badge--danger'],

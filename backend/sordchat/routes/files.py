@@ -26,7 +26,7 @@ except ImportError:
     # Fallback para a versão completa
     import jwt
 
-    SECRET_KEY = "sordchat_secret_key_2025"
+    SECRET_KEY = "voltcorp_secret_key_2025"
     ALGORITHM = "HS256"
 
 

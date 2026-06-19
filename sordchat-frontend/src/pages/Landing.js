@@ -20,7 +20,7 @@ const features = [
   ['Chat interno por setor', 'Canais para RH, financeiro, TI, estoque, comercial e operacao.', MessageSquare],
   ['Tickets rastreaveis', 'Solicitacoes com responsavel, prioridade, status e historico.', Ticket],
   ['Kanban operacional', 'Demandas organizadas entre backlog, execucao, revisao e concluido.', KanbanSquare],
-  ['Assistente SorDChat', 'Transforma pedidos em tickets e tarefas com setor e prioridade.', Bot],
+  ['Assistente Volt Corp', 'Transforma pedidos em tickets e tarefas com setor e prioridade.', Bot],
   ['Permissoes por perfil', 'Admin, coordenador e usuario com visibilidade adequada.', LockKeyhole],
   ['Equipe conectada', 'Funcionarios, setores e liderancas alinhados em tempo real.', Users],
 ];
@@ -39,7 +39,7 @@ const Landing = () => {
 
       <header className="lp-nav-wrap">
         <nav className="lp-nav" aria-label="Navegacao da landing">
-          <a className="lp-brand" href="#top" aria-label="SorDChat inicio">
+          <a className="lp-brand" href="#top" aria-label="Volt Corp inicio">
             <BrandLogo subtitle="" />
           </a>
           <div className="lp-nav-links">
@@ -73,7 +73,7 @@ const Landing = () => {
               <span className="lp-gradient-text">entre funcionarios e setores.</span>
             </h1>
             <p className="lp-lead">
-              O SorDChat conecta funcionarios, departamentos e liderancas, transformando solicitacoes do dia a dia em
+              O Volt Corp conecta funcionarios, departamentos e liderancas, transformando solicitacoes do dia a dia em
               tickets, tarefas e fluxos acompanhados por Kanban, status, responsaveis e prioridades.
             </p>
             <div className="lp-hero-actions">
@@ -105,7 +105,7 @@ const Landing = () => {
             </div>
           </div>
 
-          <div className="lp-hero-visual" aria-label="Previa visual do SorDChat">
+          <div className="lp-hero-visual" aria-label="Previa visual do Volt Corp">
             <div className="lp-radar" />
             <div className="lp-floating-card lp-floating-card--one">
               <small>Tickets internos</small>
@@ -130,7 +130,7 @@ const Landing = () => {
                     <Sparkles size={21} />
                   </div>
                   <div>
-                    <strong>Assistente SorDChat</strong>
+                    <strong>Assistente Volt Corp</strong>
                     <small>Central interna inteligente</small>
                   </div>
                 </div>
@@ -226,8 +226,8 @@ const Landing = () => {
       <section className="lp-section" id="assistente">
         <div className="lp-container lp-assistant-strip">
           <div>
-            <div className="lp-eyebrow"><span className="lp-pulse-dot" /> Assistente SorDChat</div>
-            <h2>Escreva o pedido. O SorDChat entende e cria o fluxo.</h2>
+            <div className="lp-eyebrow"><span className="lp-pulse-dot" /> Assistente Volt Corp</div>
+            <h2>Escreva o pedido. O Volt Corp entende e cria o fluxo.</h2>
             <p>
               O assistente interpreta solicitacoes como "abra um ticket para o financeiro" ou "crie uma tarefa para Ana
               ate amanha" e transforma em tickets ou tarefas com prioridade, setor e responsavel.
@@ -243,7 +243,7 @@ const Landing = () => {
       <section className="lp-section" id="modulos">
         <div className="lp-container">
           <div className="lp-section-title">
-            <div className="lp-eyebrow"><span className="lp-pulse-dot" /> Modulos do SorDChat</div>
+            <div className="lp-eyebrow"><span className="lp-pulse-dot" /> Modulos do Volt Corp</div>
             <h2>Conecte comunicacao, tickets e gestao visual em um unico fluxo.</h2>
           </div>
           <div className="lp-modules">
@@ -266,7 +266,7 @@ const Landing = () => {
           </div>
           <div className="lp-cta-actions">
             <Link className="lp-btn lp-btn--primary" to="/login">
-              Entrar no SorDChat
+              Entrar no Volt Corp
               <ArrowRight size={18} />
             </Link>
             <a className="lp-btn" href={DESKTOP_DOWNLOAD_URL} target="_blank" rel="noreferrer">
@@ -280,7 +280,7 @@ const Landing = () => {
       <footer className="lp-footer">
         <div className="lp-container">
           <BrandLogo subtitle="" />
-          <span>2026 SorDChat. Chat interno empresarial inteligente.</span>
+          <span>2026 Volt Corp. Chat interno empresarial inteligente.</span>
           <span className="lp-footer-check"><CheckCircle2 size={15} /> Render + Neon</span>
         </div>
       </footer>

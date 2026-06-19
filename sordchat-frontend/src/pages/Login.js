@@ -42,7 +42,7 @@ const Login = () => {
             Um workspace direto para conversar, organizar e acompanhar o time.
           </h1>
           <p className="mt-5 max-w-xl text-base text-slate-300">
-            Acesse o painel do SorDChat para conversar com a equipe, acompanhar atividades e organizar atendimentos.
+            Acesse o painel do Volt Corp para conversar com a equipe, acompanhar atividades e organizar atendimentos.
           </p>
         </div>
 
@@ -98,7 +98,7 @@ const Login = () => {
 
             <button type="submit" className="button-primary w-full" disabled={loading}>
               {loading ? <span className="spinner h-4 w-4" /> : <ArrowRight size={18} />}
-              {loading ? 'Entrando...' : 'Entrar no SorDChat'}
+              {loading ? 'Entrando...' : 'Entrar no Volt Corp'}
             </button>
           </form>
         </div>

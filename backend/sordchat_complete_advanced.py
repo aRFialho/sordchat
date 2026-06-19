@@ -17,12 +17,12 @@ import uuid
 import sqlite3  # Importar sqlite3 para as operações diretas no banco
 
 # Configurações
-SECRET_KEY = "sordchat_secret_key_super_secure_2024"
+SECRET_KEY = "voltcorp_secret_key_super_secure_2024"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 horas
 
 # Configuração do banco de dados
-SQLALCHEMY_DATABASE_URL = "sqlite:///./sordchat.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./voltcorp.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -84,7 +84,7 @@ class FileUpload(Base):
 
 # Funções para inicialização do banco de dados e tabelas (incluindo reactions)
 def init_database():
-    conn = sqlite3.connect('sordchat.db')
+    conn = sqlite3.connect('voltcorp.db')
     cursor = conn.cursor()
 
     # Criar tabelas via SQLAlchemy
@@ -413,7 +413,7 @@ def init_database():
 
 # Função para criar dados padrão do Kanban
 def create_default_kanban_data():
-    conn = sqlite3.connect('sordchat.db')
+    conn = sqlite3.connect('voltcorp.db')
     cursor = conn.cursor()
 
     # Verificar se já existem quadros
@@ -474,7 +474,7 @@ def create_default_kanban_data():
 
 
 # Instância da aplicação
-app = FastAPI(title="SorDChat API", version="1.0.0")
+app = FastAPI(title="Volt Corp API", version="1.0.0")
 
 # Configuração CORS
 app.add_middleware(
@@ -646,21 +646,21 @@ def create_default_users():
     default_users = [
         {
             "username": "admin",
-            "email": "admin@sordchat.com",
+            "email": "admin@voltcorp.com",
             "full_name": "Administrador Master",
             "password": "admin123",
             "access_level": "master"
         },
         {
             "username": "coordenador",
-            "email": "coord@sordchat.com",
+            "email": "coord@voltcorp.com",
             "full_name": "Coordenador Sistema",
             "password": "coord123",
             "access_level": "coordenador"
         },
         {
             "username": "usuario",
-            "email": "user@sordchat.com",
+            "email": "user@voltcorp.com",
             "full_name": "Usuário Padrão",
             "password": "user123",
             "access_level": "usuario"
@@ -686,7 +686,7 @@ def create_default_users():
 @app.get("/")
 async def root():
     return {
-        "message": "SorDChat API",
+        "message": "Volt Corp API",
         "version": "1.0.0",
         "status": "online"
     }
@@ -779,7 +779,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         await websocket.send_text(json.dumps(welcome_message))
 
         # Enviar histórico (com reações)
-        conn = sqlite3.connect('sordchat.db')
+        conn = sqlite3.connect('voltcorp.db')
         cursor = conn.cursor()
         cursor.execute("""
                        SELECT m.*, u.full_name
@@ -993,7 +993,7 @@ async def toggle_reaction(
         if not emoji:
             raise HTTPException(status_code=400, detail="Emoji é obrigatório")
 
-        conn = sqlite3.connect('sordchat.db')
+        conn = sqlite3.connect('voltcorp.db')
         cursor = conn.cursor()
 
         # Verificar se a mensagem existe
@@ -1081,7 +1081,7 @@ async def get_message_reactions(
         current_user: dict = Depends(get_current_user)
 ):
     try:
-        conn = sqlite3.connect('sordchat.db')
+        conn = sqlite3.connect('voltcorp.db')
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -1120,7 +1120,7 @@ async def get_message_reactions(
 @app.get("/kanban/boards")
 async def get_boards(current_user: dict = Depends(get_current_user)):
     try:
-        conn = sqlite3.connect('sordchat.db')
+        conn = sqlite3.connect('voltcorp.db')
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -1156,7 +1156,7 @@ async def get_boards(current_user: dict = Depends(get_current_user)):
 @app.get("/kanban/boards/{board_id}")
 async def get_board(board_id: int, current_user: dict = Depends(get_current_user)):
     try:
-        conn = sqlite3.connect('sordchat.db')
+        conn = sqlite3.connect('voltcorp.db')
         cursor = conn.cursor()
 
         # Buscar quadro
@@ -1256,7 +1256,7 @@ async def create_board(board_data: dict, current_user: dict = Depends(get_curren
         if not name:
             raise HTTPException(status_code=400, detail="Nome do quadro é obrigatório")
 
-        conn = sqlite3.connect('sordchat.db')
+        conn = sqlite3.connect('voltcorp.db')
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -1313,7 +1313,7 @@ async def create_task(task_data: dict, current_user: dict = Depends(get_current_
         if not title or not board_id or not column_id:
             raise HTTPException(status_code=400, detail="Título, quadro e coluna são obrigatórios")
 
-        conn = sqlite3.connect('sordchat.db')
+        conn = sqlite3.connect('voltcorp.db')
         cursor = conn.cursor()
 
         # Obter próxima posição
@@ -1358,7 +1358,7 @@ async def move_task(task_id: int, move_data: dict, current_user: dict = Depends(
         if not new_column_id or new_position is None:
             raise HTTPException(status_code=400, detail="Coluna e posição são obrigatórias")
 
-        conn = sqlite3.connect('sordchat.db')
+        conn = sqlite3.connect('voltcorp.db')
         cursor = conn.cursor()
 
         # Atualizar tarefa
@@ -1393,7 +1393,7 @@ async def move_task(task_id: int, move_data: dict, current_user: dict = Depends(
 @app.put("/kanban/tasks/{task_id}")
 async def update_task(task_id: int, task_data: dict, current_user: dict = Depends(get_current_user)):
     try:
-        conn = sqlite3.connect('sordchat.db')
+        conn = sqlite3.connect('voltcorp.db')
         cursor = conn.cursor()
 
         # Construir query dinamicamente
@@ -1437,7 +1437,7 @@ async def update_task(task_id: int, task_data: dict, current_user: dict = Depend
 @app.delete("/kanban/tasks/{task_id}")
 async def delete_task(task_id: int, current_user: dict = Depends(get_current_user)):
     try:
-        conn = sqlite3.connect('sordchat.db')
+        conn = sqlite3.connect('voltcorp.db')
         cursor = conn.cursor()
 
         cursor.execute("DELETE FROM kanban_tasks WHERE id = ?", (task_id,))
@@ -1466,7 +1466,7 @@ if __name__ == "__main__":
     init_database()
     create_default_users()
     create_default_kanban_data()  # Adicionar esta linha
-    print("🚀 Iniciando SorDChat Backend...")
+    print("🚀 Iniciando Volt Corp Backend...")
     print("📡 WebSocket: ws://127.0.0.1:8001/messages/ws/{token}")
     print("🌐 API Docs: http://127.0.0.1:8001/docs")
     print("📋 Kanban: Quadros e tarefas disponíveis!")

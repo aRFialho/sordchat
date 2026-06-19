@@ -5,11 +5,11 @@ Servidor mínimo para teste
 from fastapi import FastAPI
 import uvicorn
 
-app = FastAPI(title="SorDChat - Teste")
+app = FastAPI(title="Volt Corp - Teste")
 
 @app.get("/")
 def read_root():
-    return {"message": "SorDChat funcionando!", "status": "OK"}
+    return {"message": "Volt Corp funcionando!", "status": "OK"}
 
 @app.get("/test")
 def test_endpoint():

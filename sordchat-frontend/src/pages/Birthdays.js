@@ -84,7 +84,7 @@ const Birthdays = () => {
             <Sparkles size={13} />
             Celebracoes
           </span>
-          <h2>Aniversariantes do SorDChat</h2>
+          <h2>Aniversariantes do Volt Corp</h2>
           <p>Veja quem esta comemorando hoje, quem vem nos proximos dias e quem comemorou recentemente.</p>
         </div>
 

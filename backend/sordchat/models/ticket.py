@@ -1,5 +1,5 @@
 """
-Modelo de Tickets do SorDChat
+Modelo de Tickets do Volt Corp
 """
 
 from sqlalchemy import Column, Integer, String, DateTime, Text, Enum, ForeignKey, Boolean

@@ -22,7 +22,7 @@ import AssistantPopup from '../AssistantPopup';
 import { isBirthdayToday } from '../../utils/birthdays';
 
 const pageMeta = {
-  '/dashboard': ['Dashboard', 'Visao geral operacional do SorDChat'],
+  '/dashboard': ['Dashboard', 'Visao geral operacional do Volt Corp'],
   '/chat': ['Chat', 'Conversas em tempo real'],
   '/tickets': ['Tickets', 'Fila de suporte e atendimento'],
   '/tasks': ['Tasks', 'Quadro de execucao do time'],
@@ -55,7 +55,7 @@ const Layout = ({ children }) => {
     { name: 'Alertas', icon: Bell, path: '/notifications', show: true },
   ];
 
-  const [title, description] = pageMeta[location.pathname] || ['SorDChat', 'Sistema corporativo de comunicacao'];
+  const [title, description] = pageMeta[location.pathname] || ['Volt Corp', 'Sistema corporativo de comunicacao'];
   const userBirthdayToday = isBirthdayToday(user?.birthday);
 
   const handleLogout = async () => {
@@ -72,7 +72,7 @@ const Layout = ({ children }) => {
               <BrandLogo showText={false} />
               {sidebarOpen && (
                 <div className="min-w-0">
-                  <p className="m-0 truncate text-base font-extrabold text-white">SorDChat</p>
+                  <p className="m-0 truncate text-base font-extrabold text-white">Volt Corp</p>
                   <p className="m-0 truncate text-xs text-slate-400">Workspace interno</p>
                 </div>
               )}

@@ -17,12 +17,12 @@ def is_port_available(port):
 
 
 # Criar app simples
-app = FastAPI(title="SorDChat - Teste Simples")
+app = FastAPI(title="Volt Corp - Teste Simples")
 
 
 @app.get("/")
 def read_root():
-    return {"message": "SorDChat funcionando!", "status": "OK"}
+    return {"message": "Volt Corp funcionando!", "status": "OK"}
 
 
 @app.get("/test")

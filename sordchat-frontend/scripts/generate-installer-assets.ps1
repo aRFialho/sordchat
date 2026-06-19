@@ -29,24 +29,38 @@ function Save-InstallerSidebar {
 
   $background = [System.Drawing.Drawing2D.LinearGradientBrush]::new(
     [System.Drawing.Rectangle]::new(0, 0, 164, 314),
-    [System.Drawing.ColorTranslator]::FromHtml("#0F172A"),
-    [System.Drawing.ColorTranslator]::FromHtml("#0F766E"),
+    [System.Drawing.ColorTranslator]::FromHtml("#061A45"),
+    [System.Drawing.ColorTranslator]::FromHtml("#0A84FF"),
     60
   )
   $graphics.FillRectangle($background, 0, 0, 164, 314)
 
-  $graphics.FillEllipse((New-Brush "#2DD4BF"), 95, -34, 112, 112)
-  $graphics.FillEllipse((New-Brush "#2563EB"), -46, 228, 132, 132)
-  $graphics.FillRectangle((New-Brush "#FFFFFF"), 28, 42, 108, 82)
-  $graphics.FillRectangle((New-Brush "#FFFFFF"), 50, 112, 26, 30)
-  $graphics.FillRectangle((New-Brush "#0F172A"), 42, 58, 80, 10)
-  $graphics.FillRectangle((New-Brush "#0F766E"), 42, 78, 58, 10)
-  $graphics.FillEllipse((New-Brush "#0F172A"), 108, 96, 18, 18)
+  $graphics.FillEllipse((New-Brush "#0A84FF"), 94, -28, 110, 110)
+  $graphics.FillEllipse((New-Brush "#061A45"), -48, 228, 132, 132)
+  $graphics.FillPolygon((New-Brush "#FFFFFF"), @(
+    [System.Drawing.Point]::new(42, 42),
+    [System.Drawing.Point]::new(78, 42),
+    [System.Drawing.Point]::new(94, 108),
+    [System.Drawing.Point]::new(72, 108)
+  ))
+  $graphics.FillPolygon((New-Brush "#FFFFFF"), @(
+    [System.Drawing.Point]::new(122, 42),
+    [System.Drawing.Point]::new(86, 42),
+    [System.Drawing.Point]::new(70, 108),
+    [System.Drawing.Point]::new(92, 108)
+  ))
+  $graphics.FillPolygon((New-Brush "#061A45"), @(
+    [System.Drawing.Point]::new(83, 80),
+    [System.Drawing.Point]::new(105, 80),
+    [System.Drawing.Point]::new(78, 132),
+    [System.Drawing.Point]::new(88, 96),
+    [System.Drawing.Point]::new(66, 96)
+  ))
 
   $titleFont = [System.Drawing.Font]::new("Segoe UI", 17, [System.Drawing.FontStyle]::Bold)
   $smallFont = [System.Drawing.Font]::new("Segoe UI", 8.5, [System.Drawing.FontStyle]::Regular)
-  $graphics.DrawString("SorDChat", $titleFont, (New-Brush "#F8FAFC"), 18, 172)
-  $graphics.DrawString("Instalador`ninterno", $smallFont, (New-Brush "#CCFBF1"), 20, 214)
+  $graphics.DrawString("Volt Corp", $titleFont, (New-Brush "#F8FAFC"), 18, 172)
+  $graphics.DrawString("Instalador`ninterno", $smallFont, (New-Brush "#DBEAFE"), 20, 214)
   $graphics.DrawString("Seguro para`na equipe", $smallFont, (New-Brush "#DBEAFE"), 20, 258)
 
   $bitmap.Save($Path, [System.Drawing.Imaging.ImageFormat]::Bmp)
@@ -63,15 +77,23 @@ function Save-InstallerHeader {
   $graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::ClearTypeGridFit
 
   $graphics.Clear([System.Drawing.Color]::White)
-  $graphics.FillEllipse((New-Brush "#2DD4BF"), 92, -26, 82, 82)
-  $graphics.FillEllipse((New-Brush "#2563EB"), 115, 28, 46, 46)
-  $graphics.FillRectangle((New-Brush "#0F172A"), 12, 12, 32, 24)
-  $graphics.FillRectangle((New-Brush "#0F172A"), 20, 34, 8, 10)
-  $graphics.FillRectangle((New-Brush "#2DD4BF"), 18, 19, 20, 4)
-  $graphics.FillRectangle((New-Brush "#F8FAFC"), 18, 27, 14, 4)
+  $graphics.FillEllipse((New-Brush "#0A84FF"), 92, -26, 82, 82)
+  $graphics.FillEllipse((New-Brush "#061A45"), 115, 28, 46, 46)
+  $graphics.FillPolygon((New-Brush "#061A45"), @(
+    [System.Drawing.Point]::new(12, 11),
+    [System.Drawing.Point]::new(32, 11),
+    [System.Drawing.Point]::new(42, 43),
+    [System.Drawing.Point]::new(26, 43)
+  ))
+  $graphics.FillPolygon((New-Brush "#0A84FF"), @(
+    [System.Drawing.Point]::new(46, 11),
+    [System.Drawing.Point]::new(68, 11),
+    [System.Drawing.Point]::new(50, 46),
+    [System.Drawing.Point]::new(34, 46)
+  ))
 
   $font = [System.Drawing.Font]::new("Segoe UI", 10.5, [System.Drawing.FontStyle]::Bold)
-  $graphics.DrawString("SorDChat", $font, (New-Brush "#0F172A"), 52, 18)
+  $graphics.DrawString("Volt Corp", $font, (New-Brush "#0F172A"), 52, 18)
 
   $bitmap.Save($Path, [System.Drawing.Imaging.ImageFormat]::Bmp)
   $graphics.Dispose()

@@ -1,3 +1,3 @@
 """
-Schemas de validação do SorDChat
+Schemas de validação do Volt Corp
 """

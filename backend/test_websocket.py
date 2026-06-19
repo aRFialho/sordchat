@@ -143,7 +143,7 @@ def test_api_endpoints():
 async def main():
     """Função principal de teste"""
 
-    print("🚀 SorDChat - Teste Completo do Sistema")
+    print("🚀 Volt Corp - Teste Completo do Sistema")
     print("=" * 50)
 
     # Testar API REST

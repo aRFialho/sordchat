@@ -74,11 +74,11 @@ function Invoke-EditExecutableResources {
   $resourceArguments = @(
     $FilePath,
     "--set-icon", $iconPath,
-    "--set-version-string", "FileDescription", "SorDChat web and desktop client",
-    "--set-version-string", "ProductName", "SorDChat",
-    "--set-version-string", "CompanyName", "SorDChat",
-    "--set-version-string", "InternalName", "SorDChat",
-    "--set-version-string", "OriginalFilename", "SorDChat.exe",
+    "--set-version-string", "FileDescription", "Volt Corp web and desktop client",
+    "--set-version-string", "ProductName", "Volt Corp",
+    "--set-version-string", "CompanyName", "Volt Corp",
+    "--set-version-string", "InternalName", "Volt Corp",
+    "--set-version-string", "OriginalFilename", "Volt Corp.exe",
     "--set-file-version", "0.1.0",
     "--set-product-version", "0.1.0"
   )
@@ -107,14 +107,27 @@ function Invoke-SignFile {
     "/fd", "sha256",
     "/tr", "http://timestamp.digicert.com",
     "/td", "sha256",
-    "/d", "SorDChat",
+    "/d", "Volt Corp",
     "/debug",
     $FilePath
   )
 
   & $SignToolPath @signArguments
   if ($LASTEXITCODE -ne 0) {
-    throw "Falha ao assinar $FilePath"
+    Write-Warning "Falha ao assinar com timestamp. Tentando assinatura local sem timestamp..."
+    $fallbackArguments = @(
+      "sign",
+      "/sha1", $Thumbprint,
+      "/fd", "sha256",
+      "/d", "Volt Corp",
+      "/debug",
+      $FilePath
+    )
+
+    & $SignToolPath @fallbackArguments
+    if ($LASTEXITCODE -ne 0) {
+      throw "Falha ao assinar $FilePath"
+    }
   }
 }
 
@@ -123,11 +136,11 @@ Set-Location $frontendRoot
 & (Join-Path $PSScriptRoot "setup-internal-code-signing.ps1")
 & (Join-Path $PSScriptRoot "generate-installer-assets.ps1")
 
-$publicCertificatePath = Join-Path $frontendRoot "electron\certificates\SorDChat-Internal-Code-Signing.cer"
+$publicCertificatePath = Join-Path $frontendRoot "electron\certificates\VoltCorp-Internal-Code-Signing.cer"
 $publicCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($publicCertificatePath)
-$env:SORDCHAT_SIGN_CERT_SHA1 = $publicCertificate.Thumbprint
-$env:SORDCHAT_SIGN_CERT_SUBJECT = "SorDChat Internal Code Signing"
-Write-Host "Usando certificado SorDChat thumbprint=$($publicCertificate.Thumbprint)"
+$env:VOLTCORP_SIGN_CERT_SHA1 = $publicCertificate.Thumbprint
+$env:VOLTCORP_SIGN_CERT_SUBJECT = "Volt Corp Internal Code Signing"
+Write-Host "Usando certificado Volt Corp thumbprint=$($publicCertificate.Thumbprint)"
 
 $npm = (Get-Command "npm.cmd" -ErrorAction Stop).Source
 Invoke-Checked -Command $npm -Arguments @("run", "build")
@@ -152,12 +165,12 @@ $winUnpackedDirectory = Join-Path $frontendRoot "dist-desktop\win-unpacked"
 
 Invoke-Checked -Command $electronBuilder -Arguments @("--dir")
 
-$mainExecutable = Join-Path $winUnpackedDirectory "SorDChat.exe"
+$mainExecutable = Join-Path $winUnpackedDirectory "Volt Corp.exe"
 Invoke-EditExecutableResources -FilePath $mainExecutable -RceditPath $rcedit.FullName
 
 Get-ChildItem -Path $winUnpackedDirectory -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue |
   ForEach-Object {
-    Invoke-SignFile -FilePath $_.FullName -SignToolPath $env:SIGNTOOL_PATH -Thumbprint $env:SORDCHAT_SIGN_CERT_SHA1
+    Invoke-SignFile -FilePath $_.FullName -SignToolPath $env:SIGNTOOL_PATH -Thumbprint $env:VOLTCORP_SIGN_CERT_SHA1
   }
 
 if ($Directory) {
@@ -166,9 +179,9 @@ if ($Directory) {
 
 Invoke-Checked -Command $electronBuilder -Arguments @("--prepackaged", $winUnpackedDirectory)
 
-Get-ChildItem -Path (Join-Path $frontendRoot "dist-desktop") -Filter "SorDChat-Setup-*.exe" -ErrorAction SilentlyContinue |
+Get-ChildItem -Path (Join-Path $frontendRoot "dist-desktop") -Filter "Volt-Corp-Setup-*.exe" -ErrorAction SilentlyContinue |
   Sort-Object -Property LastWriteTime -Descending |
   Select-Object -First 1 |
   ForEach-Object {
-    Invoke-SignFile -FilePath $_.FullName -SignToolPath $env:SIGNTOOL_PATH -Thumbprint $env:SORDCHAT_SIGN_CERT_SHA1
+    Invoke-SignFile -FilePath $_.FullName -SignToolPath $env:SIGNTOOL_PATH -Thumbprint $env:VOLTCORP_SIGN_CERT_SHA1
   }

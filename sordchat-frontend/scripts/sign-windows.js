@@ -64,8 +64,8 @@ function run(command, args) {
 module.exports = async function signWindows(configuration) {
   const signTool = findSignTool();
   const hash = configuration.hash || 'sha256';
-  const certificateSha1 = process.env.SORDCHAT_SIGN_CERT_SHA1;
-  const certificateSubject = process.env.SORDCHAT_SIGN_CERT_SUBJECT || 'SorDChat Internal Code Signing';
+  const certificateSha1 = process.env.VOLTCORP_SIGN_CERT_SHA1;
+  const certificateSubject = process.env.VOLTCORP_SIGN_CERT_SUBJECT || 'Volt Corp Internal Code Signing';
   const timestampServer =
     configuration.options?.signtoolOptions?.rfc3161TimeStampServer ||
     configuration.options?.rfc3161TimeStampServer ||
@@ -95,7 +95,7 @@ module.exports = async function signWindows(configuration) {
 
   args.push('/debug', configuration.path);
 
-  console.log(`Assinando ${configuration.path} com certificado interno SorDChat`);
+  console.log(`Assinando ${configuration.path} com certificado interno Volt Corp`);
   await run(signTool, args);
 };
 

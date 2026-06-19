@@ -1,17 +1,17 @@
 """
-Configurações do SorDChat
+Configurações do Volt Corp
 """
 
 import os
 from pathlib import Path
 
 # Configurações básicas
-APP_NAME = "SorDChat"
+APP_NAME = "Volt Corp"
 VERSION = "1.0.0"
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
 # Configurações de segurança
-SECRET_KEY = os.getenv("SECRET_KEY", "sordchat_secret_key_2025")
+SECRET_KEY = os.getenv("SECRET_KEY", "voltcorp_secret_key_2025")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
@@ -39,7 +39,7 @@ WEBSOCKET_PING_INTERVAL = 30
 WEBSOCKET_PING_TIMEOUT = 10
 
 # Configurações de banco de dados
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/sordchat")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/voltcorp")
 
 # Configurações de email (para futuras implementações)
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
@@ -49,7 +49,7 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 
 # Configurações de logs
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-LOG_FILE = os.getenv("LOG_FILE", "sordchat.log")
+LOG_FILE = os.getenv("LOG_FILE", "voltcorp.log")
 
 # Configurações de CORS
 CORS_ORIGINS = [

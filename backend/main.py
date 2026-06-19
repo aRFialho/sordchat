@@ -1,5 +1,5 @@
 """
-SorDChat - Sistema Corporativo de Mensagens, Tickets e Tasks
+Volt Corp - Sistema Corporativo de Mensagens, Tickets e Tasks
 Arquivo principal da API FastAPI
 """
 
@@ -14,7 +14,7 @@ from .routes import auth
 
 # Configuração da aplicação
 app = FastAPI(
-    title="SorDChat API",
+    title="Volt Corp API",
     description="API para sistema corporativo de mensagens, tickets e controle de tarefas",
     version="1.0.0",
     docs_url="/docs",
@@ -38,7 +38,7 @@ app.include_router(auth.router)
 async def root():
     """Rota inicial para verificar se a API está funcionando"""
     return {
-        "message": "SorDChat API está funcionando!",
+        "message": "Volt Corp API está funcionando!",
         "timestamp": datetime.now().isoformat(),
         "version": "1.0.0",
         "endpoints": {

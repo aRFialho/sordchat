@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: sordchat-api
+    name: voltcorp-api
     runtime: python
     plan: free
     rootDir: backend
@@ -16,14 +16,14 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: FRONTEND_ORIGINS
-        value: https://sordchat-web.onrender.com
+        value: https://voltcorp-web.onrender.com
       - key: AUTO_MIGRATE_DB
         value: "true"
       - key: AUTO_SEED_USERS
         value: "true"
 
   - type: web
-    name: sordchat-web
+    name: voltcorp-web
     runtime: static
     rootDir: sordchat-frontend
     autoDeployTrigger: off
@@ -35,8 +35,8 @@ services:
         destination: /index.html
     envVars:
       - key: REACT_APP_API_URL
-        value: https://sordchat-api.onrender.com
+        value: https://voltcorp-api.onrender.com
       - key: REACT_APP_WS_URL
-        value: wss://sordchat-api.onrender.com
+        value: wss://voltcorp-api.onrender.com
       - key: REACT_APP_DESKTOP_DOWNLOAD_URL
-        value: https://sordchat-api.onrender.com/downloads/desktop/latest
+        value: https://voltcorp-api.onrender.com/downloads/desktop/latest

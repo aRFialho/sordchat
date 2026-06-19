@@ -1,5 +1,5 @@
 """
-Teste automatizado da API SorDChat
+Teste automatizado da API Volt Corp
 """
 
 import requests
@@ -58,7 +58,7 @@ def test_endpoint(method, endpoint, data=None, headers=None, description=""):
 
 def main():
     """Executa todos os testes"""
-    print("🚀 Testando API SorDChat")
+    print("🚀 Testando API Volt Corp")
     print("=" * 50)
 
     # Teste 1: Página inicial

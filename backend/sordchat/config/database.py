@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # URL de conexão com o banco
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/sordchat_db")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/voltcorp_db")
 
 # Configuração do engine SQLAlchemy
 engine = create_engine(

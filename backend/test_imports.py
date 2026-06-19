@@ -23,7 +23,7 @@ def test_import(module_name, description):
 
 def main():
     """Testa todos os imports necessários"""
-    print("🧪 Testando imports do SorDChat...")
+    print("🧪 Testando imports do Volt Corp...")
     print("=" * 50)
 
     tests = [

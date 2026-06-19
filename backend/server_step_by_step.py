@@ -1,5 +1,5 @@
 """
-Servidor SorDChat - Passo a passo
+Servidor Volt Corp - Passo a passo
 """
 
 from fastapi import FastAPI
@@ -32,7 +32,7 @@ sys.path.insert(0, str(backend_dir))
 
 # Criar aplicação FastAPI
 app = FastAPI(
-    title="SorDChat API",
+    title="Volt Corp API",
     description="API para sistema corporativo de mensagens, tickets e controle de tarefas",
     version="1.0.0",
     docs_url="/docs",
@@ -55,7 +55,7 @@ app.add_middleware(
 @app.get("/")
 async def root():
     return {
-        "message": "SorDChat API está funcionando!",
+        "message": "Volt Corp API está funcionando!",
         "timestamp": datetime.now().isoformat(),
         "version": "1.0.0",
         "status": "online",
@@ -71,7 +71,7 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "service": "SorDChat API"
+        "service": "Volt Corp API"
     }
 
 
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     if not port:
         print("❌ Nenhuma porta disponível")
     else:
-        print("🚀 SorDChat API - Iniciando...")
+        print("🚀 Volt Corp API - Iniciando...")
         print(f"📡 Servidor: http://127.0.0.1:{port}")
         print(f"📚 Docs: http://127.0.0.1:{port}/docs")
         print(f"🔍 Status: http://127.0.0.1:{port}/status")

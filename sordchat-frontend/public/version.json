@@ -1,7 +1,7 @@
 {
   "service": "web",
-  "app": "SorDChat",
+  "app": "Volt Corp",
   "version": "0.1.0",
-  "commit": "local",
-  "build_time": null
+  "commit": "2314757",
+  "build_time": "2026-06-19T14:40:01.794Z"
 }

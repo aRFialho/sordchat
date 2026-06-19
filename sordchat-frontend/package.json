@@ -1,8 +1,8 @@
 {
-  "name": "sordchat-frontend",
+  "name": "volt-corp-frontend",
   "version": "0.1.0",
-  "description": "SorDChat web and desktop client",
-  "author": "SorDChat",
+  "description": "Volt Corp web and desktop client",
+  "author": "Volt Corp",
   "private": true,
   "homepage": "./",
   "main": "electron/main.js",
@@ -42,6 +42,7 @@
     "desktop:dist": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1",
     "desktop:cert:setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-internal-code-signing.ps1",
     "desktop:cert:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-internal-certificate.ps1",
+    "desktop:env:fix": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/fix-electron-run-as-node.ps1",
     "desktop:installer:assets": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-installer-assets.ps1",
     "desktop:signature:verify": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-desktop-signature.ps1",
     "test": "react-scripts test",
@@ -53,8 +54,8 @@
   },
   "build": {
     "extends": null,
-    "appId": "com.sordchat.app",
-    "productName": "SorDChat",
+    "appId": "com.voltcorp.app",
+    "productName": "Volt Corp",
     "directories": {
       "output": "dist-desktop"
     },
@@ -66,8 +67,8 @@
     ],
     "extraResources": [
       {
-        "from": "electron/certificates/SorDChat-Internal-Code-Signing.cer",
-        "to": "certificates/SorDChat-Internal-Code-Signing.cer"
+        "from": "electron/certificates/VoltCorp-Internal-Code-Signing.cer",
+        "to": "certificates/VoltCorp-Internal-Code-Signing.cer"
       }
     ],
     "win": {
@@ -83,7 +84,7 @@
       "target": [
         "nsis"
       ],
-      "artifactName": "SorDChat-Setup-${version}.${ext}"
+      "artifactName": "Volt-Corp-Setup-${version}.${ext}"
     },
     "nsis": {
       "include": "electron/installer/installer.nsh",
@@ -98,7 +99,7 @@
       "allowElevation": true,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "SorDChat",
+      "shortcutName": "Volt Corp",
       "displayLanguageSelector": false,
       "deleteAppDataOnUninstall": false
     }

@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
 
       // Verificar se é erro de conexão
       if (error.message.includes('fetch')) {
-        toast.error('Nao foi possivel conectar ao SorDChat. Tente novamente em alguns instantes.');
+        toast.error('Nao foi possivel conectar ao Volt Corp. Tente novamente em alguns instantes.');
       } else {
         toast.error(error.message);
       }

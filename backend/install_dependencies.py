@@ -19,7 +19,7 @@ def install_package(package):
 def main():
     """Instala todas as dependências necessárias"""
 
-    print("🔧 Instalando dependências do SorDChat...")
+    print("🔧 Instalando dependências do Volt Corp...")
     print("=" * 50)
 
     packages = [

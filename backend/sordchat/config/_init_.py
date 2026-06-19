@@ -1,3 +1,3 @@
 """
-Configurações do SorDChat
+Configurações do Volt Corp
 """

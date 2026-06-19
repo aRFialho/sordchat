@@ -1,4 +1,4 @@
-# SorDChat
+# Volt Corp
 
 Workspace para comunicacao, tarefas e suporte interno, com web app, API FastAPI, banco Neon/Postgres e build desktop via Electron.
 
@@ -47,8 +47,8 @@ O blueprint esta em `render.yaml`.
 
 Configuracao sem custo no Render:
 
-- `sordchat-api` usa `plan: free`.
-- `sordchat-web` usa `runtime: static`, que e o tipo de site estatico gratuito.
+- `voltcorp-api` usa `plan: free`.
+- `voltcorp-web` usa `runtime: static`, que e o tipo de site estatico gratuito.
 - `autoDeployTrigger: off` evita deploy automatico a cada push; faca deploy manual quando quiser testar.
 - Nenhum banco Render Postgres, disco persistente, private service, worker, cron ou key-value e criado pelo blueprint.
 - O banco fica no Neon via `DATABASE_URL`.
@@ -58,10 +58,10 @@ Variaveis para configurar no Render:
 
 - `DATABASE_URL`: connection string do Neon com SSL.
 - `SECRET_KEY`: segredo JWT.
-- `FRONTEND_ORIGINS`: URL publica do static site, por exemplo `https://sordchat-web.onrender.com`.
-- `REACT_APP_API_URL`: URL publica da API, por exemplo `https://sordchat-api.onrender.com`.
-- `REACT_APP_WS_URL`: URL WebSocket da API, por exemplo `wss://sordchat-api.onrender.com`.
-- `REACT_APP_DESKTOP_DOWNLOAD_URL`: URL do instalador desktop publicado. Padrao de producao: `https://sordchat-api.onrender.com/downloads/desktop/latest`.
+- `FRONTEND_ORIGINS`: URL publica do static site, por exemplo `https://voltcorp-web.onrender.com`.
+- `REACT_APP_API_URL`: URL publica da API, por exemplo `https://voltcorp-api.onrender.com`.
+- `REACT_APP_WS_URL`: URL WebSocket da API, por exemplo `wss://voltcorp-api.onrender.com`.
+- `REACT_APP_DESKTOP_DOWNLOAD_URL`: URL do instalador desktop publicado. Padrao de producao: `https://voltcorp-api.onrender.com/downloads/desktop/latest`.
 
 ## Desktop
 
@@ -100,7 +100,7 @@ aceitas pela maquina.
 Para uma maquina cliente aceitar as assinaturas internas antes da primeira
 instalacao, copie estes dois arquivos para a mesma pasta:
 
-- `dist-desktop/certificates/SorDChat-Internal-Code-Signing.cer`
+- `dist-desktop/certificates/VoltCorp-Internal-Code-Signing.cer`
 - `scripts/install-internal-certificate.ps1`
 
 Depois rode como administrador nessa maquina:
@@ -117,10 +117,10 @@ Publicar o instalador no Neon para download pela propria API:
 
 ```powershell
 cd backend
-python scripts/publish_desktop_release.py ..\sordchat-frontend\dist-desktop\SorDChat-Setup-0.1.0.exe
+python scripts/publish_desktop_release.py ..\sordchat-frontend\dist-desktop\Volt-Corp-Setup-0.1.0.exe
 ```
 
-Depois de publicado, a landing usa `REACT_APP_DESKTOP_DOWNLOAD_URL=https://sordchat-api.onrender.com/downloads/desktop/latest`.
+Depois de publicado, a landing usa `REACT_APP_DESKTOP_DOWNLOAD_URL=https://voltcorp-api.onrender.com/downloads/desktop/latest`.
 
 ## Observacoes
 

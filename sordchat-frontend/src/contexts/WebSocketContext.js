@@ -121,13 +121,13 @@ export const WebSocketProvider = ({ children }) => {
         }
 
         try {
-          const stored = JSON.parse(localStorage.getItem('sordchat:notifications')) || [];
+          const stored = JSON.parse(localStorage.getItem('voltcorp:notifications')) || [];
           const nextNotifications = [
             notification,
             ...stored.filter((item) => item.id !== notification.id),
           ].slice(0, 100);
-          localStorage.setItem('sordchat:notifications', JSON.stringify(nextNotifications));
-          window.dispatchEvent(new CustomEvent('sordchat:notifications-updated', { detail: nextNotifications }));
+          localStorage.setItem('voltcorp:notifications', JSON.stringify(nextNotifications));
+          window.dispatchEvent(new CustomEvent('voltcorp:notifications-updated', { detail: nextNotifications }));
         } catch (error) {
           console.error('Erro ao salvar notificacao:', error);
         }

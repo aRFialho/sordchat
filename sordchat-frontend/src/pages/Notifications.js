@@ -38,7 +38,7 @@ const typeIcon = {
 const Notifications = () => {
   const [notifications, setNotifications] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('sordchat:notifications')) || initialNotifications;
+      return JSON.parse(localStorage.getItem('voltcorp:notifications')) || initialNotifications;
     } catch {
       return initialNotifications;
     }
@@ -53,23 +53,23 @@ const Notifications = () => {
       }
 
       try {
-        setNotifications(JSON.parse(localStorage.getItem('sordchat:notifications')) || initialNotifications);
+        setNotifications(JSON.parse(localStorage.getItem('voltcorp:notifications')) || initialNotifications);
       } catch {
         setNotifications(initialNotifications);
       }
     };
 
-    window.addEventListener('sordchat:notifications-updated', refreshNotifications);
+    window.addEventListener('voltcorp:notifications-updated', refreshNotifications);
     window.addEventListener('storage', refreshNotifications);
     return () => {
-      window.removeEventListener('sordchat:notifications-updated', refreshNotifications);
+      window.removeEventListener('voltcorp:notifications-updated', refreshNotifications);
       window.removeEventListener('storage', refreshNotifications);
     };
   }, []);
 
   const saveNotifications = (nextNotifications) => {
     setNotifications(nextNotifications);
-    localStorage.setItem('sordchat:notifications', JSON.stringify(nextNotifications));
+    localStorage.setItem('voltcorp:notifications', JSON.stringify(nextNotifications));
   };
 
   const filteredNotifications = useMemo(() => {
