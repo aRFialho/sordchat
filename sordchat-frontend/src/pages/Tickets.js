@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
+  ArrowLeft,
   ArrowRightLeft,
   CheckCircle2,
   Clock3,
@@ -264,6 +265,16 @@ const Tickets = () => {
     await loadTicketDetail(ticketId);
   };
 
+  const handleBackToTickets = () => {
+    setSelectedTicket(null);
+    setSelectedTicketId(null);
+    setTicketMessages([]);
+    setMessageText('');
+    setMessageAttachment(null);
+    setTransferNote('');
+    setCloseNote('');
+  };
+
   const handleSendMessage = async (event) => {
     event.preventDefault();
     if (!selectedTicket) return;
@@ -371,7 +382,9 @@ const Tickets = () => {
 
   return (
     <div className="work-page">
-      <section className="panel p-5">
+      {!selectedTicket && (
+        <>
+          <section className="panel p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <span className="badge">Atendimento</span>
@@ -459,32 +472,34 @@ const Tickets = () => {
             </p>
           </form>
         )}
-      </section>
+          </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        {stats.map(([label, value]) => (
-          <article className="metric-card" key={label}>
-            <p className="m-0 text-sm font-bold text-slate-500">{label}</p>
-            <p className="m-0 mt-2 text-3xl font-extrabold text-slate-950">{value}</p>
-          </article>
-        ))}
-      </section>
+          <section className="grid gap-4 md:grid-cols-3">
+            {stats.map(([label, value]) => (
+              <article className="metric-card" key={label}>
+                <p className="m-0 text-sm font-bold text-slate-500">{label}</p>
+                <p className="m-0 mt-2 text-3xl font-extrabold text-slate-950">{value}</p>
+              </article>
+            ))}
+          </section>
 
-      <section className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative w-full max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
-          <input className="input pl-10" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar tickets" />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {['Todos', 'Aberto', 'Em andamento', 'Resolvido'].map((item) => (
-            <button key={item} className={`button-secondary ${status === item ? 'button-secondary--active' : ''}`} type="button" onClick={() => setStatus(item)}>
-              {item}
-            </button>
-          ))}
-        </div>
-      </section>
+          <section className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="relative w-full max-w-md">
+              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+              <input className="input pl-10" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar tickets" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {['Todos', 'Aberto', 'Em andamento', 'Resolvido'].map((item) => (
+                <button key={item} className={`button-secondary ${status === item ? 'button-secondary--active' : ''}`} type="button" onClick={() => setStatus(item)}>
+                  {item}
+                </button>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
 
-      <section className="tickets-workspace">
+      <section className={`tickets-workspace ${selectedTicket ? 'tickets-workspace--detail' : ''}`}>
         <div className="grid content-start gap-3">
           {loading ? (
             <section className="empty-state">
@@ -545,7 +560,7 @@ const Tickets = () => {
           )}
         </div>
 
-        <aside className="ticket-detail panel">
+        <aside className={`ticket-detail panel ${selectedTicket ? 'ticket-detail--full' : ''}`}>
           {!selectedTicket ? (
             <div className="ticket-detail__empty">
               <Ticket size={32} />
@@ -554,6 +569,16 @@ const Tickets = () => {
             </div>
           ) : (
             <div className="ticket-detail__body">
+              <div className="ticket-detail__toolbar">
+                <button className="button-secondary" type="button" onClick={handleBackToTickets}>
+                  <ArrowLeft size={17} />
+                  Voltar para tickets
+                </button>
+                <button className="button-secondary" type="button" onClick={() => loadTicketDetail(selectedTicket.id)} disabled={detailLoading}>
+                  <RefreshCw size={17} />
+                  Atualizar
+                </button>
+              </div>
               <header className="ticket-detail__header">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">

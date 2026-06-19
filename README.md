@@ -65,6 +65,17 @@ Variaveis para configurar no Render:
 
 ## Desktop
 
+Preparar certificado interno gratuito para assinar o `.exe`:
+
+```powershell
+cd sordchat-frontend
+npm run desktop:cert:setup
+```
+
+Esse comando cria ou reutiliza um certificado autoassinado em `Cert:\CurrentUser\My`,
+exporta o certificado publico para `electron/certificates` e confia nele na maquina
+do build. A chave privada nao entra no instalador.
+
 Gerar pasta empacotada:
 
 ```powershell
@@ -80,6 +91,27 @@ npm run desktop:dist
 ```
 
 O instalador sai em `sordchat-frontend/dist-desktop`.
+
+O instalador inclui esse certificado publico e tenta registra-lo automaticamente
+em `LocalMachine\Root` e `LocalMachine\TrustedPublisher` durante a instalacao
+elevada. Isso faz as proximas versoes assinadas pelo mesmo certificado serem
+aceitas pela maquina.
+
+Para uma maquina cliente aceitar as assinaturas internas antes da primeira
+instalacao, copie estes dois arquivos para a mesma pasta:
+
+- `dist-desktop/certificates/SorDChat-Internal-Code-Signing.cer`
+- `scripts/install-internal-certificate.ps1`
+
+Depois rode como administrador nessa maquina:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install-internal-certificate.ps1
+```
+
+Como e um certificado interno autoassinado, isso nao compra reputacao publica do
+Microsoft SmartScreen; para remover esse tipo de alerta fora de um ambiente
+controlado, so com certificado publico/EV e historico de reputacao.
 
 Publicar o instalador no Neon para download pela propria API:
 

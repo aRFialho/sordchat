@@ -38,8 +38,12 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "desktop:start": "electron .",
-    "desktop:pack": "npm run build && electron-builder --dir",
-    "desktop:dist": "npm run build && electron-builder",
+    "desktop:pack": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1 -Directory",
+    "desktop:dist": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1",
+    "desktop:cert:setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-internal-code-signing.ps1",
+    "desktop:cert:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-internal-certificate.ps1",
+    "desktop:installer:assets": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-installer-assets.ps1",
+    "desktop:signature:verify": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-desktop-signature.ps1",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -60,17 +64,43 @@
       "electron/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "electron/certificates/SorDChat-Internal-Code-Signing.cer",
+        "to": "certificates/SorDChat-Internal-Code-Signing.cer"
+      }
+    ],
     "win": {
       "icon": "electron/assets/icon.ico",
+      "signAndEditExecutable": false,
+      "signtoolOptions": {
+        "sign": "scripts/sign-windows.js",
+        "signingHashAlgorithms": [
+          "sha256"
+        ],
+        "rfc3161TimeStampServer": "http://timestamp.digicert.com"
+      },
       "target": [
         "nsis"
       ],
-      "signAndEditExecutable": false,
       "artifactName": "SorDChat-Setup-${version}.${ext}"
     },
     "nsis": {
+      "include": "electron/installer/installer.nsh",
+      "installerIcon": "electron/assets/icon.ico",
+      "uninstallerIcon": "electron/assets/icon.ico",
+      "installerHeaderIcon": "electron/assets/icon.ico",
+      "installerHeader": "electron/installer/header.bmp",
+      "installerSidebar": "electron/installer/sidebar.bmp",
+      "uninstallerSidebar": "electron/installer/sidebar.bmp",
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "perMachine": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "SorDChat",
+      "displayLanguageSelector": false,
+      "deleteAppDataOnUninstall": false
     }
   },
   "eslintConfig": {
