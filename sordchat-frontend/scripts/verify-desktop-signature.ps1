@@ -5,7 +5,7 @@ param(
 $ErrorActionPreference = "Stop"
 $frontendRoot = Split-Path -Parent $PSScriptRoot
 if (-not $InstallerPath) {
-  $InstallerPath = Join-Path $frontendRoot "dist-desktop\Volt-Corp-Setup-0.1.0.exe"
+  $InstallerPath = Join-Path $frontendRoot "dist-desktop\VoltCorp-Setup-0.1.0.exe"
 }
 
 $resolvedInstaller = (Resolve-Path -LiteralPath $InstallerPath).Path

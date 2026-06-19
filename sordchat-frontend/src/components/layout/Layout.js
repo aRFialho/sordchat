@@ -70,12 +70,6 @@ const Layout = ({ children }) => {
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <BrandLogo showText={false} />
-              {sidebarOpen && (
-                <div className="min-w-0">
-                  <p className="m-0 truncate text-base font-extrabold text-white">Volt Corp</p>
-                  <p className="m-0 truncate text-xs text-slate-400">Workspace interno</p>
-                </div>
-              )}
             </div>
             <button
               className="icon-button sidebar__collapse"

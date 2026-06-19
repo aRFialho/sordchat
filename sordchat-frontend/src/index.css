@@ -1542,19 +1542,22 @@ button:disabled {
 }
 
 .brand-mark {
-  width: 40px;
-  height: 40px;
+  width: 168px;
+  height: 56px;
   flex: 0 0 auto;
-  border-radius: 8px;
   display: block;
   object-fit: contain;
+}
+
+.brand-mark--full {
+  max-width: min(168px, 46vw);
 }
 
 .brand-lockup {
   display: inline-flex;
   min-width: 0;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .brand-copy {
@@ -1574,6 +1577,18 @@ button:disabled {
   color: var(--muted);
   font-size: 0.75rem;
   line-height: 1.25;
+}
+
+.sidebar .brand-mark--full {
+  width: 176px;
+  max-width: 176px;
+  height: 58px;
+}
+
+.sidebar--collapsed .brand-mark--full {
+  width: 52px;
+  max-width: 52px;
+  height: 24px;
 }
 
 .icon-button {

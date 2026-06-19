@@ -11,7 +11,7 @@ from env_loader import load_database_url_from_env_file
 
 ROOT = Path(__file__).resolve().parents[2]
 FRONTEND_PACKAGE = ROOT / "sordchat-frontend" / "package.json"
-DEFAULT_INSTALLER = ROOT / "sordchat-frontend" / "dist-desktop" / "Volt-Corp-Setup-0.1.0.exe"
+DEFAULT_INSTALLER = ROOT / "sordchat-frontend" / "dist-desktop" / "VoltCorp-Setup-0.1.0.exe"
 CHUNK_SIZE = 1024 * 1024
 
 

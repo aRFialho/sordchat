@@ -19,7 +19,13 @@ const { app, BrowserWindow, shell } = electron;
 
 const isDev = process.env.ELECTRON_START_URL;
 const appIcon = path.join(__dirname, 'assets', 'icon.ico');
+const productionWebUrl = process.env.VOLTCORP_WEB_URL || 'https://voltcorp-web.onrender.com';
 let mainWindow = null;
+
+const getLocalAppUrl = () => {
+  const indexPath = path.join(__dirname, '..', 'build', 'index.html');
+  return `${pathToFileURL(indexPath).toString()}#/login`;
+};
 
 if (process.platform === 'win32') {
   app.setAppUserModelId('com.voltcorp.app');
@@ -45,8 +51,11 @@ function createWindow() {
     mainWindow = null;
   });
 
-  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
     console.error(`Falha ao carregar ${validatedURL}: ${errorCode} ${errorDescription}`);
+    if (!isDev && isMainFrame && validatedURL.startsWith(productionWebUrl)) {
+      mainWindow.loadURL(getLocalAppUrl());
+    }
   });
 
   mainWindow.webContents.on('render-process-gone', (_event, details) => {
@@ -60,11 +69,19 @@ function createWindow() {
     }
     mainWindow.loadURL(startUrl.toString());
   } else {
-    const indexPath = path.join(__dirname, '..', 'build', 'index.html');
-    mainWindow.loadURL(`${pathToFileURL(indexPath).toString()}#/login`);
+    const startUrl = new URL(productionWebUrl);
+    if (!startUrl.hash) {
+      startUrl.hash = '/login';
+    }
+    mainWindow.loadURL(startUrl.toString());
   }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    const isAppNavigation =
+      isDev ? url.startsWith(process.env.ELECTRON_START_URL) : url.startsWith(productionWebUrl);
+    if (isAppNavigation) {
+      return { action: 'allow' };
+    }
     shell.openExternal(url);
     return { action: 'deny' };
   });

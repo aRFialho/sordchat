@@ -1,16 +1,15 @@
 import React from 'react';
 
 const publicUrl = process.env.PUBLIC_URL || '';
-export const brandMarkSrc = `${publicUrl}/brand/voltcorp-mark.svg`;
-export const brandLogoSrc = `${publicUrl}/brand/voltcorp-logo.svg`;
+export const brandMarkSrc = `${publicUrl}/brand/LOGO.jpeg`;
+export const brandLogoSrc = `${publicUrl}/brand/ICO.jpeg`;
 
 const BrandLogo = ({ subtitle = 'Workspace corporativo', showText = true, className = '', textClassName = '' }) => (
   <span className={`brand-lockup ${className}`.trim()}>
-    <img className="brand-mark" src={brandMarkSrc} alt="" aria-hidden="true" />
-    {showText && (
+    <img className="brand-mark brand-mark--full" src={brandLogoSrc} alt="Volt Corp" />
+    {showText && subtitle && (
       <span className={`brand-copy ${textClassName}`.trim()}>
-        <strong>Volt Corp</strong>
-        {subtitle && <small>{subtitle}</small>}
+        <small>{subtitle}</small>
       </span>
     )}
   </span>

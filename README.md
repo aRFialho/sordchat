@@ -117,7 +117,7 @@ Publicar o instalador no Neon para download pela propria API:
 
 ```powershell
 cd backend
-python scripts/publish_desktop_release.py ..\sordchat-frontend\dist-desktop\Volt-Corp-Setup-0.1.0.exe
+python scripts/publish_desktop_release.py ..\sordchat-frontend\dist-desktop\VoltCorp-Setup-0.1.0.exe
 ```
 
 Depois de publicado, a landing usa `REACT_APP_DESKTOP_DOWNLOAD_URL=https://voltcorp-api.onrender.com/downloads/desktop/latest`.

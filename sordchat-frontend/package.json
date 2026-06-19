@@ -1,5 +1,5 @@
 {
-  "name": "volt-corp-frontend",
+  "name": "voltcorp",
   "version": "0.1.0",
   "description": "Volt Corp web and desktop client",
   "author": "Volt Corp",
@@ -84,7 +84,7 @@
       "target": [
         "nsis"
       ],
-      "artifactName": "Volt-Corp-Setup-${version}.${ext}"
+      "artifactName": "VoltCorp-Setup-${version}.${ext}"
     },
     "nsis": {
       "include": "electron/installer/installer.nsh",

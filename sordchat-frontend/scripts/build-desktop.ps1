@@ -179,7 +179,7 @@ if ($Directory) {
 
 Invoke-Checked -Command $electronBuilder -Arguments @("--prepackaged", $winUnpackedDirectory)
 
-Get-ChildItem -Path (Join-Path $frontendRoot "dist-desktop") -Filter "Volt-Corp-Setup-*.exe" -ErrorAction SilentlyContinue |
+Get-ChildItem -Path (Join-Path $frontendRoot "dist-desktop") -Filter "VoltCorp-Setup-*.exe" -ErrorAction SilentlyContinue |
   Sort-Object -Property LastWriteTime -Descending |
   Select-Object -First 1 |
   ForEach-Object {

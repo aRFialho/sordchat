@@ -4,6 +4,8 @@ Add-Type -AssemblyName System.Drawing
 
 $frontendRoot = Split-Path -Parent $PSScriptRoot
 $installerDirectory = Join-Path $frontendRoot "electron\installer"
+$logoPath = Join-Path $frontendRoot "public\brand\ICO.jpeg"
+$iconPath = Join-Path $frontendRoot "public\brand\LOGO.jpeg"
 New-Item -ItemType Directory -Path $installerDirectory -Force | Out-Null
 
 function New-Brush {
@@ -11,12 +13,27 @@ function New-Brush {
   return [System.Drawing.SolidBrush]::new([System.Drawing.ColorTranslator]::FromHtml($Hex))
 }
 
-function New-Pen {
+function Draw-ContainedImage {
   param(
-    [string]$Hex,
-    [float]$Width = 1
+    [System.Drawing.Graphics]$Graphics,
+    [string]$ImagePath,
+    [float]$X,
+    [float]$Y,
+    [float]$Width,
+    [float]$Height
   )
-  return [System.Drawing.Pen]::new([System.Drawing.ColorTranslator]::FromHtml($Hex), $Width)
+
+  $image = [System.Drawing.Image]::FromFile($ImagePath)
+  try {
+    $scale = [Math]::Min($Width / $image.Width, $Height / $image.Height)
+    $drawWidth = $image.Width * $scale
+    $drawHeight = $image.Height * $scale
+    $drawX = $X + (($Width - $drawWidth) / 2)
+    $drawY = $Y + (($Height - $drawHeight) / 2)
+    $Graphics.DrawImage($image, $drawX, $drawY, $drawWidth, $drawHeight)
+  } finally {
+    $image.Dispose()
+  }
 }
 
 function Save-InstallerSidebar {
@@ -24,44 +41,18 @@ function Save-InstallerSidebar {
 
   $bitmap = [System.Drawing.Bitmap]::new(164, 314)
   $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-  $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+  $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+  $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
   $graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::ClearTypeGridFit
 
-  $background = [System.Drawing.Drawing2D.LinearGradientBrush]::new(
-    [System.Drawing.Rectangle]::new(0, 0, 164, 314),
-    [System.Drawing.ColorTranslator]::FromHtml("#061A45"),
-    [System.Drawing.ColorTranslator]::FromHtml("#0A84FF"),
-    60
-  )
-  $graphics.FillRectangle($background, 0, 0, 164, 314)
+  $graphics.Clear([System.Drawing.Color]::White)
+  Draw-ContainedImage -Graphics $graphics -ImagePath $iconPath -X 20 -Y 34 -Width 124 -Height 124
+  Draw-ContainedImage -Graphics $graphics -ImagePath $logoPath -X 10 -Y 165 -Width 144 -Height 58
 
-  $graphics.FillEllipse((New-Brush "#0A84FF"), 94, -28, 110, 110)
-  $graphics.FillEllipse((New-Brush "#061A45"), -48, 228, 132, 132)
-  $graphics.FillPolygon((New-Brush "#FFFFFF"), @(
-    [System.Drawing.Point]::new(42, 42),
-    [System.Drawing.Point]::new(78, 42),
-    [System.Drawing.Point]::new(94, 108),
-    [System.Drawing.Point]::new(72, 108)
-  ))
-  $graphics.FillPolygon((New-Brush "#FFFFFF"), @(
-    [System.Drawing.Point]::new(122, 42),
-    [System.Drawing.Point]::new(86, 42),
-    [System.Drawing.Point]::new(70, 108),
-    [System.Drawing.Point]::new(92, 108)
-  ))
-  $graphics.FillPolygon((New-Brush "#061A45"), @(
-    [System.Drawing.Point]::new(83, 80),
-    [System.Drawing.Point]::new(105, 80),
-    [System.Drawing.Point]::new(78, 132),
-    [System.Drawing.Point]::new(88, 96),
-    [System.Drawing.Point]::new(66, 96)
-  ))
-
-  $titleFont = [System.Drawing.Font]::new("Segoe UI", 17, [System.Drawing.FontStyle]::Bold)
-  $smallFont = [System.Drawing.Font]::new("Segoe UI", 8.5, [System.Drawing.FontStyle]::Regular)
-  $graphics.DrawString("Volt Corp", $titleFont, (New-Brush "#F8FAFC"), 18, 172)
-  $graphics.DrawString("Instalador`ninterno", $smallFont, (New-Brush "#DBEAFE"), 20, 214)
-  $graphics.DrawString("Seguro para`na equipe", $smallFont, (New-Brush "#DBEAFE"), 20, 258)
+  $smallFont = [System.Drawing.Font]::new("Segoe UI", 8.5, [System.Drawing.FontStyle]::Bold)
+  $graphics.DrawString("Instalador interno", $smallFont, (New-Brush "#64748B"), 30, 238)
+  $graphics.DrawString("Volt Corp", $smallFont, (New-Brush "#0F172A"), 50, 258)
+  $smallFont.Dispose()
 
   $bitmap.Save($Path, [System.Drawing.Imaging.ImageFormat]::Bmp)
   $graphics.Dispose()
@@ -73,27 +64,11 @@ function Save-InstallerHeader {
 
   $bitmap = [System.Drawing.Bitmap]::new(150, 57)
   $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-  $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-  $graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::ClearTypeGridFit
+  $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+  $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
 
   $graphics.Clear([System.Drawing.Color]::White)
-  $graphics.FillEllipse((New-Brush "#0A84FF"), 92, -26, 82, 82)
-  $graphics.FillEllipse((New-Brush "#061A45"), 115, 28, 46, 46)
-  $graphics.FillPolygon((New-Brush "#061A45"), @(
-    [System.Drawing.Point]::new(12, 11),
-    [System.Drawing.Point]::new(32, 11),
-    [System.Drawing.Point]::new(42, 43),
-    [System.Drawing.Point]::new(26, 43)
-  ))
-  $graphics.FillPolygon((New-Brush "#0A84FF"), @(
-    [System.Drawing.Point]::new(46, 11),
-    [System.Drawing.Point]::new(68, 11),
-    [System.Drawing.Point]::new(50, 46),
-    [System.Drawing.Point]::new(34, 46)
-  ))
-
-  $font = [System.Drawing.Font]::new("Segoe UI", 10.5, [System.Drawing.FontStyle]::Bold)
-  $graphics.DrawString("Volt Corp", $font, (New-Brush "#0F172A"), 52, 18)
+  Draw-ContainedImage -Graphics $graphics -ImagePath $logoPath -X 8 -Y 6 -Width 134 -Height 45
 
   $bitmap.Save($Path, [System.Drawing.Imaging.ImageFormat]::Bmp)
   $graphics.Dispose()
@@ -103,4 +78,4 @@ function Save-InstallerHeader {
 Save-InstallerSidebar -Path (Join-Path $installerDirectory "sidebar.bmp")
 Save-InstallerHeader -Path (Join-Path $installerDirectory "header.bmp")
 
-Write-Host "Assets do instalador gerados em $installerDirectory"
+Write-Host "Assets do instalador gerados com a logo oficial em $installerDirectory"

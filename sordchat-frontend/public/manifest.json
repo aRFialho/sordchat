@@ -3,8 +3,8 @@
   "name": "Volt Corp",
   "icons": [
     {
-      "src": "brand/voltcorp-mark.svg",
-      "type": "image/svg+xml",
+      "src": "brand/ICO.jpeg",
+      "type": "image/jpeg",
       "sizes": "512x512",
       "purpose": "any"
     },
