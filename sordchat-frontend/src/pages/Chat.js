@@ -108,6 +108,29 @@ const getAttachmentIcon = (extension) => {
   return FileText;
 };
 
+const getAttachmentFileId = (message = {}) =>
+  message.attachment_file_id || message.file_id || message.file_path || null;
+
+const getAttachmentFilename = (message = {}) =>
+  message.attachment_filename || message.filename || message.content || 'Arquivo';
+
+const getAttachmentSize = (message = {}) => message.attachment_file_size || message.file_size || null;
+
+const formatFileSize = (bytes) => {
+  const size = Number(bytes);
+  if (!Number.isFinite(size) || size <= 0) {
+    return '';
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const unitIndex = Math.min(Math.floor(Math.log(size) / Math.log(1024)), units.length - 1);
+  const value = size / (1024 ** unitIndex);
+  return `${value >= 10 || unitIndex === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
+};
+
+const isAttachmentMessage = (message = {}) =>
+  message.message_type === 'file' || Boolean(getAttachmentFileId(message) || message.attachment_filename);
+
 const attachmentPreviewUrlCache = new Map();
 
 const fetchAttachmentBlob = async (fileId) => {
@@ -129,11 +152,16 @@ const AttachmentPreview = ({ message, isOwn }) => {
   const [previewUrl, setPreviewUrl] = useState('');
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewFailed, setPreviewFailed] = useState(false);
-  const filename = message.content || 'Arquivo';
-  const fileId = message.file_path;
+  const filename = getAttachmentFilename(message);
+  const fileId = getAttachmentFileId(message);
+  const fileSize = getAttachmentSize(message);
   const extension = getFileExtension(filename);
   const isImage = imageExtensions.has(extension);
   const Icon = getAttachmentIcon(extension);
+  const metaItems = [
+    extension ? extension.replace('.', '').toUpperCase() : 'Arquivo',
+    formatFileSize(fileSize),
+  ].filter(Boolean);
 
   useEffect(() => {
     let cancelled = false;
@@ -224,9 +252,9 @@ const AttachmentPreview = ({ message, isOwn }) => {
         <span className="attachment-card__icon">
           <Icon size={18} />
         </span>
-        <div className="min-w-0 flex-1">
+        <div className="attachment-card__details">
           <p className="attachment-card__name">{filename}</p>
-          <p className="attachment-card__meta">{extension ? extension.replace('.', '').toUpperCase() : 'Arquivo'}</p>
+          <p className="attachment-card__meta">{metaItems.join(' - ')}</p>
         </div>
         <button className="attachment-card__download" type="button" onClick={handleDownload} title="Baixar arquivo">
           <Download size={16} />
@@ -488,7 +516,7 @@ const Chat = () => {
           <div className="grid gap-3">
             {filteredMessages.map((message) => {
               const isOwn = message.sender_id === user?.id;
-              const isFile = message.message_type === 'file';
+              const isFile = isAttachmentMessage(message);
 
               return (
                 <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>

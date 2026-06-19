@@ -30,7 +30,7 @@ const pageMeta = {
   '/files': ['Arquivos', 'Documentos e anexos compartilhados'],
   '/users': ['Usuarios', 'Equipe e permissoes'],
   '/birthdays': ['Aniversarios', 'Ultimos e proximos aniversariantes'],
-  '/admin': ['Admin', 'Gestao global do workspace'],
+  '/admin': ['Admin Master', 'Gestao multi-tenant da plataforma'],
   '/coordinator': ['Coordenacao', 'Gestao do setor coordenado'],
   '/notifications': ['Notificacoes', 'Eventos recentes do workspace'],
 };
@@ -50,7 +50,7 @@ const Layout = ({ children }) => {
     { name: 'Arquivos', icon: Files, path: '/files', show: true },
     { name: 'Usuarios', icon: Users, path: '/users', show: isCoordinator() },
     { name: 'Aniversarios', icon: Cake, path: '/birthdays', show: true },
-    { name: 'Admin', icon: ShieldCheck, path: '/admin', show: isAdmin() },
+    { name: 'Admin Master', icon: ShieldCheck, path: '/admin', show: isAdmin() },
     { name: 'Coordenacao', icon: BriefcaseBusiness, path: '/coordinator', show: isCoordinator() },
     { name: 'Alertas', icon: Bell, path: '/notifications', show: true },
   ];

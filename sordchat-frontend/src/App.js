@@ -5,6 +5,7 @@ import { WebSocketProvider } from './contexts/WebSocketContext';
 import Layout from './components/layout/Layout';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
+import ChangePassword from './pages/ChangePassword';
 import Dashboard from './pages/Dashboard';
 import Chat from './pages/Chat';
 import Kanban from './pages/Kanban';
@@ -20,24 +21,36 @@ import Toast from './components/common/Toast';
 import VersionUpdatePrompt from './components/common/VersionUpdatePrompt';
 import BirthdayCelebration from './components/common/BirthdayCelebration';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, allowPasswordChange = false }) => {
+  const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) {
     return <Loading fullScreen text="Verificando sessao..." />;
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user?.must_change_password && !allowPasswordChange) {
+    return <Navigate to="/change-password" replace />;
+  }
+
+  return children;
 };
 
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) {
     return <Loading fullScreen text="Verificando sessao..." />;
   }
 
-  return !isAuthenticated ? children : <Navigate to="/dashboard" replace />;
+  if (!isAuthenticated) {
+    return children;
+  }
+
+  return <Navigate to={user?.must_change_password ? '/change-password' : '/dashboard'} replace />;
 };
 
 const ProtectedApp = () => (
@@ -82,6 +95,14 @@ function App() {
               <PublicRoute>
                 <Login />
               </PublicRoute>
+            }
+          />
+          <Route
+            path="/change-password"
+            element={
+              <ProtectedRoute allowPasswordChange>
+                <ChangePassword />
+              </ProtectedRoute>
             }
           />
           <Route

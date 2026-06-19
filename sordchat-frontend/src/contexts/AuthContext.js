@@ -61,7 +61,11 @@ export const AuthProvider = ({ children }) => {
 
       setUser(userData);
 
-      toast.success(`Bem-vindo, ${userData.full_name}!`);
+      toast.success(
+        userData.must_change_password
+          ? 'Troca de senha obrigatoria para continuar.'
+          : `Bem-vindo, ${userData.full_name || userData.name}!`
+      );
 
       return { success: true, user: userData };
     } catch (error) {
@@ -78,6 +82,32 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const changePassword = async ({ currentPassword, newPassword }) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Nao foi possivel alterar a senha.');
+    }
+
+    const data = await response.json();
+    localStorage.setItem('user', JSON.stringify(data.user));
+    setUser(data.user);
+    toast.success('Senha alterada com sucesso.');
+    return data.user;
   };
 
   const logout = async () => {
@@ -106,17 +136,22 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAdmin = () => {
-    return user?.access_level === 'master';
+    return Boolean(user?.is_platform_admin || user?.access_level === 'master' || user?.company_role === 'master_admin');
   };
 
   const isCoordinator = () => {
-    return user?.access_level === 'coordenador' || user?.access_level === 'master';
+    return Boolean(
+      isAdmin() ||
+      user?.access_level === 'coordenador' ||
+      ['company_admin', 'coordinator'].includes(user?.company_role)
+    );
   };
 
   const value = {
     user,
     loading,
     login,
+    changePassword,
     logout,
     isAdmin,
     isCoordinator,
